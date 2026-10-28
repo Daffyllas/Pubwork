@@ -5,6 +5,8 @@
 // is pointed at it, so the screen, printing, PDF and every other export show exactly the same thing.
 // The shadow is a soft grey shape drawn just under the picture (an SVG like any other shape on the page).
 
+import { cutOf, cutPreview } from './piccut.js';
+
 const SVGNS = 'http://www.w3.org/2000/svg';
 const MAX_SIDE = 2400; // pixels on the long side of a baked picture
 const cache = new Map(); // key -> Promise<data URL>
@@ -12,11 +14,11 @@ const cache = new Map(); // key -> Promise<data URL>
 // it.fx with every setting filled in, or null when nothing is switched on
 export function activeFx(it) {
   const f = it.fx; if (!f) return null;
-  const on = f.brightness || f.contrast || f.grey || f.sepia || f.washout || f.recolor || (f.opacity != null && f.opacity < 1) || f.flipH || f.flipV || f.radius || f.shadow;
+  const on = f.brightness || f.contrast || f.grey || f.sepia || f.washout || f.recolor || (f.opacity != null && f.opacity < 1) || f.flipH || f.flipV || f.radius || f.shadow || cutOf(f);
   return on ? f : null;
 }
 // effects that change the picture itself (everything except the shadow)
-const needsBake = (f) => !!(f.brightness || f.contrast || f.grey || f.sepia || f.washout || f.recolor || (f.opacity != null && f.opacity < 1) || f.flipH || f.flipV || f.radius);
+const needsBake = (f) => !!(f.brightness || f.contrast || f.grey || f.sepia || f.washout || f.recolor || (f.opacity != null && f.opacity < 1) || f.flipH || f.flipV || f.radius || cutOf(f));
 
 export function decorateImage(box, img, it, ctx, src) {
   const f = activeFx(it); if (!f || !src?.url) return;
@@ -25,9 +27,10 @@ export function decorateImage(box, img, it, ctx, src) {
   // the cut-out shape and the border go into the picture too, so they look the same everywhere
   const crop = it.points?.length > 2, border = it.stroke?.width > 0 && (crop || f.radius);
   if (f.radius && !crop) box.style.borderRadius = `${radiusPt(it, f)}pt`; // straight away, before the copy is ready
+  const uncut = cutPreview(box, img, it, f); // the cut edges too
   return bake(it, f, src, crop, border).then((url) => {
     if (!url) return;
-    img.src = url;
+    img.src = url; uncut?.();
     img.style.filter = ''; box.querySelector(':scope > svg')?.remove(); // the .pub recolour (it.adjust) is in the copy now
     if (crop) box.style.clipPath = '';
     if (border) box.style.outline = '';
@@ -53,7 +56,9 @@ async function draw(it, f, src, rel, border) {
   const pic = new Image(); pic.src = src.url; await pic.decode();
   const nw = pic.naturalWidth || 0, nh = pic.naturalHeight || 0;
   // pixels per point: the picture's own sharpness, at least 3 (so corners and borders are smooth), at most MAX_SIDE
-  let s = nw && nh ? Math.max(nw / it.w, nh / it.h) : 3;
+  // with cut edges the whole picture is bigger than the box: fw x fh points
+  const cut = cutOf(f), fw = cut ? it.w / (1 - cut.l - cut.r) : it.w, fh = cut ? it.h / (1 - cut.t - cut.b) : it.h;
+  let s = nw && nh ? Math.max(nw / fw, nh / fh) : 3;
   if (src.type === 'image/svg+xml') s = 4;
   s = Math.min(Math.max(s, 3), MAX_SIDE / Math.max(it.w, it.h, 1));
   const W = Math.max(1, Math.round(it.w * s)), H = Math.max(1, Math.round(it.h * s));
@@ -63,7 +68,8 @@ async function draw(it, f, src, rel, border) {
   g.save();
   if (f.flipH) { g.translate(W, 0); g.scale(-1, 1); }
   if (f.flipV) { g.translate(0, H); g.scale(1, -1); }
-  g.drawImage(pic, 0, 0, W, H);
+  if (cut) { const kx = W / it.w, ky = H / it.h; g.drawImage(pic, -cut.l * fw * kx, -cut.t * fh * ky, fw * kx, fh * ky); } // (cut in the picture's own, unturned edges)
+  else g.drawImage(pic, 0, 0, W, H);
   g.restore();
   const ops = colourOps(f, it.adjust);
   let alpha = opacity < 1 || !!rel || !!f.radius || !/jpeg/.test(src.type || '');

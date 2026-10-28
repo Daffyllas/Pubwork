@@ -3,7 +3,7 @@
 // wraps around pictures and shapes. While typing they change the selected words or paragraphs;
 // otherwise the whole of the selected text boxes.
 import './text.css';
-import { applyRunStyle, moreAtCaret, parasInRange, ppOf, setParaProps, relist, listInput, unlistPatch, LIST_STEP } from '../text.js';
+import { applyRunStyle, moreAtCaret, parasInRange, ppOf, setParaProps, relist, listInput, unlistPatch, caretOffMarker, shiftPatch, LIST_STEP } from '../text.js';
 import { paraExtras, layoutTabs, tabify, cleanLink, refreshDropCaps } from '../../render.js';
 
 const SPACINGS = [['tighter2', -1.5], ['tighter', -0.75], ['normal', 0], ['looser', 0.75], ['looser2', 1.5]];
@@ -367,6 +367,11 @@ function wireList(el, ctx) {
       relist(ec, cur.cell ? [] : (cur.item.paras || []).slice(0, first ? +first.dataset.pi || 0 : 0));
     });
   }
+  if (ec && !ec.__tlSel) { // Home, a click or a tap left of a bullet: the caret goes to the start of the words
+    ec.__tlSel = true;
+    const keep = () => { if (!ec.isConnected) { document.removeEventListener('selectionchange', keep); return; } if (ed.editing?.container === ec) caretOffMarker(ec); };
+    document.addEventListener('selectionchange', keep);
+  }
   const onSel = () => { if (!el.isConnected) { document.removeEventListener('selectionchange', onSel); return; } if (ed.editing) refreshList(ctx); };
   document.addEventListener('selectionchange', onSel);
 
@@ -379,8 +384,7 @@ function wireList(el, ctx) {
   el.querySelectorAll('[data-bullet]').forEach((b) => b.addEventListener('click', () => { last.bullet = b.dataset.bullet; changeLists(ctx, listOn('bullet', last.bullet), true); }));
   el.querySelectorAll('[data-num]').forEach((b) => b.addEventListener('click', () => { last.num = b.dataset.num; changeLists(ctx, listOn('num', last.num), true); }));
   el.querySelectorAll('[data-indent]').forEach((b) => b.addEventListener('click', () => {
-    const d = +b.dataset.indent * LIST_STEP;
-    changeLists(ctx, (pa) => { const hang = pa.indentFirst < 0 ? -pa.indentFirst : 0; return { indentLeft: Math.round(Math.max(hang, (pa.indentLeft || 0) + d) * 100) / 100 || null }; });
+    changeLists(ctx, (pa) => shiftPatch(pa, +b.dataset.indent));
   }));
   const setLine = (lh) => changeLists(ctx, () => ({ lineHeight: lh }));
   $('#tlLine').addEventListener('change', (e) => {

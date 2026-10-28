@@ -1,7 +1,7 @@
 // A .pubwork file is data anyone could hand-edit. Before it is shown, every field that should be a number is made a
 // number, colours must look like colours, and names that end up in CSS lose characters that could break out of it.
 // (Files read from .pub come out of the reader already typed; this is for our own format.)
-const NUM = new Set(('angle at chainIndex chainLength col cols columnGap columns dash dx dy h indentFirst indentLeft indentRight ' +
+const NUM = new Set(('angle at numStart chainIndex chainLength col cols columnGap columns dash dx dy h indentFirst indentLeft indentRight ' +
   'mult opacity pad points pt rotate size spaceAfter spaceBefore span turn w width wrapGap x y brightness contrast radius lines ' +
   'pos tracking blur gap rows step offset gutter top bottom left right copies scale sizeX sizeY').split(' '));
 const COLOR_KEYS = new Set(['color', 'from', 'to', 'recolor', 'background', 'shadowColor', 'glowColor']);

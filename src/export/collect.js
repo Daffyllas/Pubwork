@@ -3,7 +3,14 @@
 // those formats can't hold (gradients, shadows, recoloured or clipped pictures, curves with arcs) as a
 // sharp picture of exactly what is on screen. Positions and sizes are in points from the page's top-left.
 import { walkItems } from '../editor/model.js';
-import { sliceParas, paraUnits } from '../render.js';
+import { sliceParas, paraUnits, listLabels } from '../render.js';
+
+// each list paragraph gets its bullet or number as shown (list: { text, kind, level, n, num, seq }, see
+// render.js listLabels), counted through the whole story; the formats then only write it out
+export function withLists(paras) {
+  const labels = listLabels(paras);
+  return labels.some(Boolean) ? paras.map((pa, i) => (labels[i] ? { ...pa, list: labels[i] } : pa)) : paras;
+}
 
 const b64ToBytes = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
@@ -72,7 +79,7 @@ function chainParts(pageEls) {
   }
   for (const boxes of boxesByChain.values()) {
     boxes.sort((a, b) => a.dataset.chainIndex - b.dataset.chainIndex);
-    const story = boxes[0].__item.paras;
+    const story = withLists(boxes[0].__item.paras);
     const at = boxes.map((b) => { const p = b.querySelector('.flow p.para'); return p ? { p: +p.dataset.pi, c: +p.dataset.c0 } : null; });
     boxes.forEach((b, k) => {
       const s = at[k]; if (!s) { starts.set(b.dataset.id, []); return; }
@@ -141,7 +148,7 @@ function wrapBands(box, paras, k) {
       if (pc.r) part.indentRight = (pa.indentRight || 0) + pc.r;
       if (pc.jump) part.spaceBefore = (j === 0 && !pa.cont ? pa.spaceBefore || 0 : 0) + pc.jump;
       else if (j > 0) part.spaceBefore = 0;
-      if (j > 0 && part.cont && pc.jump) part.cont = false, part.indentFirst = 0, part.bullet = undefined; // so the space above is kept
+      if (j > 0 && part.cont && pc.jump) part.cont = false, part.indentFirst = 0, part.bullet = undefined, part.num = undefined, part.list = undefined; // so the space above is kept
       out.push(part);
     });
   });
@@ -164,13 +171,14 @@ export async function collectPages(doc, pageEls) {
       const rot = it.rotate ? -it.rotate : 0; // clockwise degrees, as shown
       const base = { x: it.x, y: it.y, w: it.w, h: it.h, rot };
       if (it.type === 'text') {
-        let paras = it.chain ? parts.get(it.id) || [] : it.paras;
+        let paras = it.chain ? parts.get(it.id) || [] : withLists(it.paras);
         if (el.querySelector(':scope > .flow > .pw-float')) paras = wrapBands(el, paras, k);
         items.push({ ...base, type: 'text', pad: it.pad || [3.6, 3.6, 3.6, 3.6], valign: it.valign || 'top', fill: solid(it.fill), stroke: it.stroke || null, columns: it.columns || 1, columnGap: it.columnGap || 9, paras,
           hyphenate: !!it.hyphenate, lang: el.lang || null, pageNumber: pi + 1, pageCount: doc.pages.length });
       } else if (it.type === 'table') {
         const rowHeights = [...el.querySelectorAll('tr')].map((tr, i) => tr.getBoundingClientRect().height * k || it.rows[i]?.h || 14);
-        items.push({ ...base, type: 'table', cols: it.cols, rows: it.rows, rowHeights });
+        const rows = it.rows.map((row) => ({ ...row, cells: row.cells.map((c) => (c.paras ? { ...c, paras: withLists(c.paras) } : c)) }));
+        items.push({ ...base, type: 'table', cols: it.cols, rows, rowHeights });
       } else if (it.type === 'image') {
         const img = el.querySelector('img');
         if (!img || el.classList.contains('missing') || el.classList.contains('placeholder')) continue;

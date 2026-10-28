@@ -1,9 +1,9 @@
 // The editor: pick things on the page, move and resize them, type in text boxes, add text, pictures and
 // shapes, and undo. Every change goes through change(), which saves an undo step, updates the document
 // and redraws the page. The page on screen is drawn from the document, so what you see is what is saved.
-import { History, clone, findItem, bounds, unionBounds, moveItem, resizeItem, reId, uid, frameOf, frameBox, drawnBounds, isTurned, turnItems, resizeInFrame, normAngle, toLocal, toPage, axes } from './model.js';
+import { History, clone, findItem, bounds, unionBounds, moveItem, resizeItem, reId, uid, frameOf, frameBox, drawnBounds, isTurned, turnItems, resizeInFrame, normAngle, toPage, axes, grownAt } from './model.js';
 import { drawCrop, cropPointer, cropState, applyCrop, sameCrop, uncrop } from './crop.js';
-import { readParas, applyRunStyle, applyParaStyle, styleAtCaret } from './text.js';
+import { readParas, applyRunStyle, applyParaStyle, styleAtCaret, listTab } from './text.js';
 import { t } from '../i18n/index.js';
 
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
@@ -227,6 +227,7 @@ export class Editor {
   // ---------------------------------------------------------------- changing the document
   // label: what the undo step is called; pages: which page indexes need drawing again (default: current)
   change(label, fn, pages = null) {
+    if (this.cropping && label !== 'crop') this.endCrop(); // a picture being cropped: keep that first
     this.history.save(this.doc, label);
     fn();
     const which = pages || [this.pageIndex];
@@ -258,7 +259,7 @@ export class Editor {
       if (Math.abs(need - room) <= 0.5) continue;
       const k = parseFloat(box.style.height) / box.offsetHeight; // points per screen pixel
       const h = (need + pad) * k + 1;
-      if (Number.isFinite(h) && h > 0) { it.h = h; changed = true; }
+      if (Number.isFinite(h) && h > 0) { [it.x, it.y] = grownAt(it.x, it.y, it.h, h, it.rotate); it.h = h; changed = true; }
     }
     return changed;
   }
@@ -389,7 +390,11 @@ export class Editor {
       const fitCheck = () => {
         const cs = getComputedStyle(box), room = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
         const need = container.scrollHeight;
-        if (item.autoGrow && Math.abs(need - room) > 0.5) { const k = parseFloat(box.style.height) / box.offsetHeight; box.style.height = `${(need + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)) * k + 1}pt`; this.editing && (this.editing.grew = true); this.drawSelectionFromBox(box); }
+        if (item.autoGrow && Math.abs(need - room) > 0.5) {
+          const h0 = parseFloat(box.style.height), k = h0 / box.offsetHeight, h1 = (need + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)) * k + 1;
+          if (item.rotate) { const [nx, ny] = grownAt(parseFloat(box.style.left), parseFloat(box.style.top), h0, h1, item.rotate); box.style.left = `${nx}pt`; box.style.top = `${ny}pt`; } // a turned box grows from its own top
+          box.style.height = `${h1}pt`; this.editing && (this.editing.grew = true); this.drawSelectionFromBox(box);
+        }
         box.classList.toggle('overflow', !item.autoGrow && need > room + 1);
       };
       container.addEventListener('input', fitCheck); this.editing.fitCheck = fitCheck; fitCheck();
@@ -416,7 +421,7 @@ export class Editor {
   // read the typed words back into the document; returns the pages to draw again
   readTyping(ed) {
     const item = ed.item, pagesToDraw = new Set([this.pageIndex]);
-    if (ed.grew) item.h = parseFloat(ed.box.style.height) || item.h;
+    if (ed.grew) { item.h = parseFloat(ed.box.style.height) || item.h; if (item.rotate) { item.x = parseFloat(ed.box.style.left); item.y = parseFloat(ed.box.style.top); } }
     if (ed.cell) ed.cell.paras = readParas(ed.container, ed.cell.paras);
     else if (item.chain) {
       // the story runs through several boxes: read them all, in order, and give every box the new story
@@ -431,7 +436,7 @@ export class Editor {
     return pagesToDraw;
   }
   // the frame follows a box that is growing while you type
-  drawSelectionFromBox(box) { const sel = this.pageEl?.querySelector('.pw-ui.sel'); if (sel) sel.style.height = box.style.height; }
+  drawSelectionFromBox(box) { const sel = this.pageEl?.querySelector('.pw-ui.sel'); if (sel) Object.assign(sel.style, { left: box.style.left, top: box.style.top, height: box.style.height }); }
   saveRange() { const s = getSelection(); if (s.rangeCount && this.editing?.container.contains(s.getRangeAt(0).commonAncestorContainer)) this.editing.range = s.getRangeAt(0).cloneRange(); }
   restoreRange() { const r = this.editing?.range; if (!r) return null; const s = getSelection(); s.removeAllRanges(); s.addRange(r); return r; }
   endEdit() {
@@ -477,9 +482,11 @@ export class Editor {
   onKey(e) {
     if (!this.doc || document.getElementById('start') && !document.getElementById('start').hidden) return;
     if (isFormField(e.target) && !this.editing) return;
+    if (e.target.closest?.('#thumbs')) return; // keys on the page strip move pages, not the picked item
     const k = e.key;
     if (this.editing) {
       if (k === 'Escape') { e.preventDefault(); this.endEdit(); return; }
+      if (k === 'Tab' && !isMod(e) && listTab(this, e.shiftKey)) { e.preventDefault(); return; } // a list item moves in or out
       if (k === 'Tab' && !isMod(e) && this.editing.cell) { e.preventDefault(); this.nextCell(e.shiftKey ? -1 : 1); return; }
       if (k === 'Tab' && !isMod(e) && !this.editing.cell) { e.preventDefault(); document.execCommand('insertText', false, '\t'); return; }
       if (isMod(e) && ['b', 'i', 'u'].includes(k.toLowerCase())) {

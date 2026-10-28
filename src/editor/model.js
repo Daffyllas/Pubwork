@@ -119,6 +119,12 @@ export function frameBox(f) {
 export const drawnBounds = (it) => frameBox(frameOf([it]) || { cx: 0, cy: 0, w: 0, h: 0, a: 0 });
 export const isTurned = (items) => items.some((it) => (it.type === 'group' && it.rotate) || leaves(it).some((x) => normAngle(x.rotate || 0)));
 
+// where a turned box's top-left must go when it grows from h to newH, so its top edge stays where it is
+export function grownAt(x, y, h, newH, rot) {
+  if (!rot) return [x, y];
+  const d = (newH - h) / 2, ey = axes(rot)[1];
+  return [x + d * ey[0], y + d * (ey[1] - 1)];
+}
 // turn items by deg (to the left) around the point (cx, cy)
 export function turnItems(items, deg, cx, cy) {
   if (!deg) return;

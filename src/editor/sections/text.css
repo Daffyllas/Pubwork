@@ -29,7 +29,7 @@
 #side .tl-row{gap:6px}
 #side .tl-chips{display:flex;gap:4px}
 #side .tl-chips[hidden]{display:none}
-#side .tl-chips .pbtn{font-size:15px;color:var(--ink);font-family:"Segoe UI Symbol","DejaVu Sans",system-ui,sans-serif}
+#side .tl-chips .pbtn{font-size:18px;line-height:1;color:var(--ink);font-family:"Segoe UI Symbol","DejaVu Sans",system-ui,sans-serif}
 #side .tl-chips .pbtn[aria-pressed="true"]{color:var(--accent)}
 #side .tl-push{flex:1}
 #side .tl-row > .pbtn{color:var(--ink)}

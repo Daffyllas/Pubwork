@@ -549,6 +549,7 @@ export function layoutBox(box) {
 const hexA = (hex, a) => { const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return hex; const n = parseInt(m[1], 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
 function tableEl(it, ctx) {
   const box = el('div', 'it table', { left: pt(it.x), top: pt(it.y), width: pt(it.w), height: pt(it.h) });
+  if (it.rotate) box.style.transform = `rotate(${-it.rotate}deg)`;
   box.__item = it;
   const t = el('table');
   const cg = el('colgroup'); for (const w of it.cols) cg.appendChild(el('col', null, { width: pt(w) })); t.appendChild(cg);

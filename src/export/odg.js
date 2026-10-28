@@ -70,10 +70,13 @@ function parasXml(paras, st, ctx) {
     const first = pa.runs.find((r) => r.text) || pa.runs[0] || {};
     let kids = '';
     if (pa.tabs?.length) kids += `<style:tab-stops>${pa.tabs.map((t) => `<style:tab-stop style:position="${n(Math.max(0, t.pos - (pa.indentLeft || 0)))}" style:type="${{ right: 'right', center: 'center', decimal: 'char' }[t.align] || 'left'}"${t.align === 'decimal' ? ' style:char="."' : ''}${t.leader && t.leader !== 'none' ? ` style:leader-style="${t.leader === 'dot' ? 'dotted' : t.leader === 'dash' ? 'dash' : 'solid'}" style:leader-text="${t.leader === 'dot' ? '.' : t.leader === 'dash' ? '-' : '_'}"` : ''}/>`).join('')}</style:tab-stops>`;
+    // a bullet or number hanging in front of the words: a tab stop where the words start (positions count from the indent)
+    const mark = pa.list && !pa.cont ? pa.list.text : null, hang = mark && pa.indentFirst < 0;
+    if (hang && !pa.tabs?.length) kids += '<style:tab-stops><style:tab-stop style:position="0pt"/></style:tab-stops>';
     if (pa.dropCap?.lines >= 2 && !pa.cont) kids += `<style:drop-cap style:lines="${Math.min(5, Math.round(pa.dropCap.lines))}" style:length="1" style:distance="2pt"/>`;
     const pName = st.get('paragraph', 'P', `<style:paragraph-properties ${pp}${kids ? `>${kids}</style:paragraph-properties>` : '/>'}${textProps({ ...first, text: '' }, st, size)}`);
     let body = '';
-    if (pa.bullet && !pa.cont) body += `<text:span text:style-name="${st.get('text', 'T', textProps(first, st, size))}">${textXml(`${pa.bullet} `)}</text:span>`;
+    if (mark) body += `<text:span text:style-name="${st.get('text', 'T', textProps({ ...first, underline: false, strike: false, highlight: null }, st, size))}">${textXml(`${mark}${hang ? '\t' : ' '}`)}</text:span>`;
     for (const r of pa.runs) {
       if (r.size) ctx.lastSize = r.size;
       if (!r.text) continue;

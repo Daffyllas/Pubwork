@@ -110,7 +110,7 @@ export class Panel {
       if (fontSel.dataset.list !== names.join('|')) { fontSel.innerHTML = names.map((n) => `<option>${esc(n)}</option>`).join(''); fontSel.dataset.list = names.join('|'); }
       fontSel.value = s.font || 'Arial';
     }
-    const size = this.el.querySelector('#pSize'); if (size && document.activeElement !== size) size.value = s.size;
+    const size = this.el.querySelector('#pSize'); if (size && document.activeElement !== size) size.value = s.size ? +(+s.size).toFixed(1) : s.size;
     const col = this.el.querySelector('#pColor'); if (col && s.color) { col.value = s.color; col.nextElementSibling.style.borderBottomColor = s.color; }
     this.el.querySelectorAll('[data-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(!!s[b.dataset.toggle])));
     this.el.querySelectorAll('[data-align]').forEach((b) => b.setAttribute('aria-pressed', String(s.align === b.dataset.align)));

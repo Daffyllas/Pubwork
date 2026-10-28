@@ -68,6 +68,7 @@ function runsXml(r, size, ctx) {
   // a line break inside a paragraph is its own element; tabs stay as tab characters
   return r.text.split(/(\n|\u000b)/).filter((s) => s !== '').map((s) => (/^(\n|\u000b)$/.test(s) ? `<a:br>${rp}</a:br>` : `<a:r>${rp}<a:t>${x(s)}</a:t></a:r>`)).join('');
 }
+const AUTONUM = { 1: 'arabic', a: 'alphaLc', A: 'alphaUc', i: 'romanLc', I: 'romanUc' };
 function parasXml(paras, ctx) {
   if (!paras.length) return `<a:p><a:endParaRPr lang="en-US" sz="${clamp(Math.round(10 * ctx.k * 100), 100, 400000)}"/></a:p>`;
   return paras.map((pa) => {
@@ -84,7 +85,13 @@ function parasXml(paras, ctx) {
     pp += `<a:spcAft><a:spcPts val="${clamp(Math.round((pa.spaceAfter || 0) * ctx.k * 100), 0, 158400)}"/></a:spcAft>`;
     const first = pa.runs.find((r) => r.text) || pa.runs[0] || {};
     const size = Math.max(0, ...pa.runs.map((r) => r.size || 0)) || ctx.lastSize || 10;
-    if (pa.bullet && !pa.cont) pp += `<a:buClr><a:srgbClr val="${hex(first.color || '#000000')}"/></a:buClr><a:buFont typeface="${x(first.font || 'Arial')}"/><a:buChar char="${x([...pa.bullet][0] || '•')}"/>`;
+    // bullets and numbers as PowerPoint's own, each number given as shown (startAt), so it can't count differently
+    const l = pa.list && !pa.cont ? pa.list : null;
+    if (l) {
+      pp += `<a:buClr><a:srgbClr val="${hex(first.color || '#000000')}"/></a:buClr><a:buFont typeface="${x(first.font || 'Arial')}"/>`;
+      if (l.kind === 'num') pp += `<a:buAutoNum type="${AUTONUM[l.num] || 'arabic'}${pa.numSuffix === ')' ? 'ParenR' : 'Period'}"${l.n > 1 ? ` startAt="${Math.min(32767, l.n)}"` : ''}/>`;
+      else pp += `<a:buChar char="${x([...l.text][0] || '•')}"/>`;
+    }
     else pp += '<a:buNone/>';
     if (pa.tabs?.length) pp += `<a:tabLst>${pa.tabs.slice(0, 32).map((tb) => `<a:tab pos="${E(tb.pos, ctx)}" algn="${{ right: 'r', center: 'ctr', decimal: 'dec' }[tb.align] || 'l'}"/>`).join('')}</a:tabLst>`;
     let body = '';

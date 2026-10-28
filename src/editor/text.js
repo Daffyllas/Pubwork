@@ -256,7 +256,6 @@ export function relist(container, before = []) {
   // a line split from a list item that starts the numbers again: only the first of the two starts again
   props.forEach((pa, i) => { if (i && pa.numStart && ps[i].dataset.pp === ps[i - 1].dataset.pp) { delete pa.numStart; setParaProps(ps[i], { numStart: null }); } });
   const labels = listLabels([...before, ...props]).slice(before.length);
-  const sel = getSelection();
   ps.forEach((p, i) => {
     const lab = labels[i], pa = props[i], cur = [...p.querySelectorAll('.bullet')];
     if (!lab || pa.cont) { cur.forEach((b) => b.remove()); return; }
@@ -265,10 +264,25 @@ export function relist(container, before = []) {
     const probe = setMarker(document.createElement('p'), lab.text, pa, look);
     if (cur.length === 1 && p.firstChild === cur[0] && cur[0].outerHTML === probe.outerHTML) return;
     setMarker(p, lab.text, pa, look);
-    // the caret goes after the number, never before it
-    const r = sel.rangeCount ? sel.getRangeAt(0) : null;
-    if (r && r.collapsed && r.startContainer === p && r.startOffset === 0) { const c = document.createRange(); c.setStart(p, 1); c.collapse(true); sel.removeAllRanges(); sel.addRange(c); }
   });
+  caretOffMarker(container);
+}
+// The caret (or the start of the selection) never stays before or inside a bullet or number: it goes to
+// the start of the words, so what is typed there takes their style. True when it was moved.
+export function caretOffMarker(container) {
+  const sel = getSelection(); if (!sel.rangeCount) return false;
+  const r = sel.getRangeAt(0), n = r.startContainer;
+  // the paragraph the selection starts in (or right before: a selection of the whole box starts in the box)
+  const p = n === container ? container.childNodes[r.startOffset] : (n.nodeType === 1 ? n : n.parentElement)?.closest('p.para'), b = p?.firstChild;
+  if (!p?.classList?.contains('para') || p.parentElement !== container || !b?.classList?.contains('bullet')) return false;
+  const after = document.createRange(); after.setStart(p, 1);
+  if (r.compareBoundaryPoints(Range.START_TO_START, after) >= 0) return false; // already at or past the words
+  const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, { acceptNode: (t) => (b.contains(t) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT) });
+  const t = w.nextNode(), c = document.createRange();
+  if (t) c.setStart(t, 0); else c.setStart(p, 1);
+  if (r.collapsed || r.comparePoint(c.startContainer, c.startOffset) > 0) c.collapse(true); else c.setEnd(r.endContainer, r.endOffset);
+  sel.removeAllRanges(); sel.addRange(c);
+  return true;
 }
 // is the caret at the very start of the paragraph's words?
 function caretAtStart(p, r) {
@@ -295,12 +309,35 @@ export function listInput(e, container) {
   if (e.inputType === 'insertParagraph') {
     if (wordsOf(p).trim()) return false; // the browser makes the next item
     const hang = pa.indentFirst < 0 ? -pa.indentFirst : 0;
-    if ((pa.indentLeft || 0) > hang + 0.5) setParaProps(p, { indentLeft: Math.max(hang, (pa.indentLeft || 0) - LIST_STEP) });
+    if ((pa.indentLeft || 0) > hang + 0.5) setParaProps(p, shiftPatch(pa, -1));
     else setParaProps(p, unlistPatch(pa));
   } else {
     if (p.classList.contains('cont') || !caretAtStart(p, r)) return false;
     setParaProps(p, unlistPatch(pa, true));
   }
   e.preventDefault();
+  return true;
+}
+// one step in (dir 1) or out (-1); numbers one level deeper go 1, a, i, as in Word
+const NEXT_NUM = { 1: 'a', a: 'i', i: '1', A: 'I', I: '1' }, PREV_NUM = { 1: 'i', a: '1', i: 'a', A: '1', I: 'A' };
+export function shiftPatch(pa, dir) {
+  const hang = pa.indentFirst < 0 ? -pa.indentFirst : 0, now = pa.indentLeft || 0;
+  const left = Math.round(Math.max(hang, now + dir * LIST_STEP) * 100) / 100, patch = { indentLeft: left || null };
+  if (pa.num && left !== now) patch.num = (dir > 0 ? NEXT_NUM : PREV_NUM)[pa.num] || pa.num;
+  return patch;
+}
+// Tab at the start of a list item's words (or with several list items selected) moves the items one level in;
+// Shift+Tab one level out. ed: the editor. True when handled (then the Tab is not typed).
+// (to be called from the editor's key handling, before a Tab is typed)
+export function listTab(ed, back = false) {
+  const cur = ed?.editing; if (!cur) return false;
+  const sel = getSelection(); if (!sel.rangeCount) return false;
+  const r = sel.getRangeAt(0), ps = parasInRange(cur.container, r).filter((p) => !p.classList.contains('cont'));
+  if (!ps.length || !ps.every((p) => { const pa = ppOf(p); return pa.bullet || pa.num; })) return false;
+  if (r.collapsed && !caretAtStart(ps[0], r)) return false;
+  for (const p of ps) setParaProps(p, shiftPatch(ppOf(p), back ? -1 : 1));
+  const first = cur.container.querySelector(':scope > p.para');
+  relist(cur.container, cur.cell ? [] : (cur.item.paras || []).slice(0, first ? +first.dataset.pi || 0 : 0));
+  cur.fitCheck?.(); ed.flushSoon?.(); ed.saveRange?.(); ed.app?.panel?.refreshText?.();
   return true;
 }

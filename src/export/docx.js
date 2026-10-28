@@ -54,10 +54,30 @@ function wrapLink(r, ctx, xml) {
 }
 const TAB_ALIGN = { left: 'left', right: 'right', center: 'center', decimal: 'decimal' };
 const TAB_LEAD = { none: 'none', dot: 'dot', dash: 'hyphen', line: 'underscore' };
+// Lists stay lists in Word: every run of bullets or numbers in a text box is a Word list of its own that
+// starts at the number shown, so Word numbers it the same and Enter in Word goes on with it.
+const NUM_FMT = { 1: 'decimal', a: 'lowerLetter', A: 'upperLetter', i: 'lowerRoman', I: 'upperRoman' };
+function listNum(pa, ctx) {
+  const l = pa.list, key = `${ctx.box}:${l.seq}`;
+  let li = ctx.lists.find((x) => x.key === key);
+  if (!li) {
+    li = { key, id: ctx.lists.length + 1, kind: l.kind, fmt: NUM_FMT[l.num] || 'decimal', text: l.kind === 'num' ? `%1${pa.numSuffix ?? '.'}` : l.text, start: l.n || 1,
+      left: pa.indentLeft || 0, hang: pa.indentFirst < 0 ? -pa.indentFirst : 0 };
+    ctx.lists.push(li);
+  }
+  return `<w:numPr><w:ilvl w:val="0"/><w:numId w:val="${li.id}"/></w:numPr>`;
+}
+function numberingXml(lists) {
+  const lvl = (li, i) => `<w:lvl w:ilvl="${i}"><w:start w:val="${i ? 1 : li.start}"/><w:numFmt w:val="${li.kind === 'num' ? li.fmt : 'bullet'}"/><w:lvlText w:val="${x(li.kind === 'num' ? li.text.replace('%1', `%${i + 1}`) : li.text)}"/><w:lvlJc w:val="left"/>${li.hang ? '' : '<w:suff w:val="space"/>'}<w:pPr><w:ind w:left="${tw(li.left + i * 18)}"${li.hang ? ` w:hanging="${tw(li.hang)}"` : ''}/></w:pPr></w:lvl>`;
+  const abs = lists.map((li) => `<w:abstractNum w:abstractNumId="${li.id}"><w:multiLevelType w:val="singleLevel"/>${[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => lvl(li, i)).join('')}</w:abstractNum>`).join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${abs}${lists.map((li) => `<w:num w:numId="${li.id}"><w:abstractNumId w:val="${li.id}"/></w:num>`).join('')}</w:numbering>`;
+}
 function parasXml(paras, ctx) {
   if (!paras.length) return '<w:p/>';
+  ctx.box = (ctx.box || 0) + 1; // lists never run on from one text box (or table cell) into another
   return paras.map((pa) => {
     let pp = '';
+    if (pa.list && !pa.cont) pp += listNum(pa, ctx);
     if (pa.background) pp += `<w:shd w:val="clear" w:color="auto" w:fill="${hex(pa.background)}"/>`;
     if (pa.tabs?.length) pp += `<w:tabs>${pa.tabs.map((t) => `<w:tab w:val="${TAB_ALIGN[t.align] || 'left'}" w:leader="${TAB_LEAD[t.leader] || 'none'}" w:pos="${tw(t.pos)}"/>`).join('')}</w:tabs>`;
     if (ctx.item && !ctx.item.hyphenate) pp += '<w:suppressAutoHyphens/>';
@@ -79,7 +99,6 @@ function parasXml(paras, ctx) {
     const size = Math.max(0, ...pa.runs.map((r) => r.size || 0)) || ctx.lastSize || 10;
     pp += runProps({ ...(first || {}), text: '' }, size);
     let body = '', drop = '';
-    if (pa.bullet && !pa.cont) body += runXml({ ...(first || {}), text: `${pa.bullet}\t` }, size, ctx);
     let runs = pa.runs;
     if (pa.dropCap?.lines >= 2 && !pa.cont && first?.text && !first.field) {
       // a drop cap: Word keeps the big letter in a little paragraph of its own, framed beside the text
@@ -180,7 +199,7 @@ const sect = (pg) => `<w:sectPr><w:pgSz w:w="${tw(pg.w)}" w:h="${tw(pg.h)}"${pg.
 
 export async function exportDocx(doc, pageEls) {
   const pages = await collectPages(doc, pageEls);
-  const ctx = { ids: 0, z: 1, images: 0, media: [], lastSize: 10, links: [] };
+  const ctx = { ids: 0, z: 1, images: 0, media: [], lastSize: 10, links: [], lists: [] };
   let body = '';
   pages.forEach((pg, i) => {
     const runs = pg.items.map((it) => itemRun(it, ctx)).join('');
@@ -193,15 +212,16 @@ export async function exportDocx(doc, pageEls) {
   const exts = [...new Set(ctx.media.map((m) => m.name.split('.').pop()))];
   const mime = { png: 'image/png', jpeg: 'image/jpeg', gif: 'image/gif', bmp: 'image/bmp', wmf: 'image/x-wmf', emf: 'image/x-emf' };
   const files = {
-    '[Content_Types].xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${exts.map((x2) => `<Default Extension="${x2}" ContentType="${mime[x2]}"/>`).join('')}<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
+    '[Content_Types].xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${exts.map((x2) => `<Default Extension="${x2}" ContentType="${mime[x2]}"/>`).join('')}<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>${ctx.lists.length ? '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' : ''}<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`,
     '_rels/.rels': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>',
     'word/document.xml': documentXml,
-    'word/_rels/document.xml.rels': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${ctx.media.map((m) => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.name}"/>`).join('')}${ctx.links.map((l) => `<Relationship Id="${l.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${x(l.href)}" TargetMode="External"/>`).join('')}</Relationships>`,
+    'word/_rels/document.xml.rels': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdSettings" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>${ctx.lists.length ? '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>' : ''}${ctx.media.map((m) => `<Relationship Id="${m.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.name}"/>`).join('')}${ctx.links.map((l) => `<Relationship Id="${l.rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${x(l.href)}" TargetMode="External"/>`).join('')}</Relationships>`,
     'word/styles.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-US"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>',
     'word/settings.xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:defaultTabStop w:val="720"/>${ctx.hyphenate ? '<w:autoHyphenation/>' : ''}<w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>`,
     'docProps/core.xml': `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${x(doc.name)}</dc:title>${doc.meta?.author ? `<dc:creator>${x(doc.meta.author)}</dc:creator>` : ''}<dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</dcterms:created></cp:coreProperties>`,
     'docProps/app.xml': '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Pubwork</Application></Properties>',
   };
+  if (ctx.lists.length) files['word/numbering.xml'] = numberingXml(ctx.lists);
   const entries = {};
   for (const [k, v] of Object.entries(files)) entries[k] = strToU8(v);
   for (const m of ctx.media) entries[`word/media/${m.name}`] = [m.bytes, { level: 0 }];

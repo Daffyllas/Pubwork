@@ -114,7 +114,7 @@ class App {
     });
     window.addEventListener('resize', () => { if (this.autoFit) this.fit(); });
     // offline use after the first visit (not inside a claude.ai artifact, which has its own address)
-    if ('serviceWorker' in navigator && !window.claude && location.protocol !== 'file:') navigator.serviceWorker.register(new URL('sw.js', ROOT)).catch(() => {});
+    if (import.meta.env.PROD && 'serviceWorker' in navigator && !window.claude && location.protocol !== 'file:') navigator.serviceWorker.register(new URL('sw.js', ROOT)).catch(() => {});
     if ('launchQueue' in window) window.launchQueue.setConsumer(async (p) => { const h = p.files?.[0]; if (h) this.openFile(await h.getFile()); });
     // fonts that arrive late change how text fits: measure again once they are in
     document.fonts.addEventListener?.('loadingdone', () => { if (!this.doc || this.saving || this.editor.editing) return; clearTimeout(this._refl); this._refl = setTimeout(() => this.settle(), 150); });
