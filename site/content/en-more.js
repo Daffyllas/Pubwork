@@ -86,7 +86,7 @@ export default {
         'Microsoft retired Publisher in October 2026 and suggests Word, PowerPoint or Designer instead. Those are good programs, but they don’t open .pub files, and they aren’t made for laying out a page. Pubwork is: text boxes that you place anywhere, text that flows from one box to the next, pictures, shapes, tables and pages.',
       ],
       steps: [
-        ['Open an old file or a template', 'Drag in a .pub file, or choose one of more than 90 free templates.'],
+        ['Open an old file or a template', 'Drag in a .pub file, or choose one of more than 150 free templates.'],
         ['Change it like in Publisher', 'Double-click text to type. Drag things to move them. One click changes all colours or fonts.'],
         ['Print or save', 'Print booklets, labels and several copies per sheet, or save as PDF, Word or pictures.'],
       ],
@@ -589,7 +589,7 @@ export default {
           ],
           [
             "Save as",
-            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, web page, e-mail, JPG, PNG",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, web page, e-mail, JPG, PNG, SVG, Scribus, InDesign (IDML)",
             "PDF, JPG, PNG",
             "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
             "PDF, LibreOffice formats, pictures",
@@ -597,7 +597,7 @@ export default {
           ],
           [
             "Templates",
-            "More than 90",
+            "More than 150",
             "8",
             "123",
             "Few for page layouts",
@@ -663,7 +663,7 @@ export default {
           "Pubwork: if you want to open, change, print and convert .pub files in any browser, including on a phone or tablet, in your own language, with mail merge, booklets and labels.",
           "LibreOffice Draw: if you prefer a program installed on your computer, as part of a full free office suite.",
           "stillPUB: a simple browser editor that can also bring in Word documents and PDFs.",
-          "LayoutSplat: if you need professional layout exports such as IDML or Scribus.",
+          "LayoutSplat: another browser editor, with many Avery label sheets and the option to host it yourself.",
           "An online converter: if you only need a quick PDF and don’t mind your file being uploaded."
         ]
       ],

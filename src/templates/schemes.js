@@ -69,7 +69,14 @@ function* colorSlots(doc) {
     }
     if (it.tint) yield [() => it.tint, (v) => retint(it, v), area / 50];
     yield* paras(it.paras);
-    if (it.type === 'table') for (const row of it.rows) for (const c of row.cells) { if (c.fill) yield [() => c.fill, (v) => { c.fill = v; }, 20]; yield* paras(c.paras); }
+    if (it.type === 'table') for (const row of it.rows) for (const c of row.cells) {
+      if (c.fill) yield [() => c.fill, (v) => { c.fill = v; }, 20];
+      const bs = c.borders || [];
+      for (let i = 0; i < bs.length; i++) { // '0.5pt solid #abcdef': only the colour part changes
+        if (typeof bs[i] === 'string' && /#[0-9a-f]{6}\b/i.test(bs[i])) yield [() => /#[0-9a-f]{6}\b/i.exec(bs[i])[0], (v) => { bs[i] = bs[i].replace(/#[0-9a-f]{6}\b/i, v); }, 1];
+      }
+      yield* paras(c.paras);
+    }
   }
 }
 // the colours a document uses, given jobs: the most used strong colours become main, second and accent,
@@ -104,7 +111,7 @@ function* runs(doc) {
 export function applyFonts(doc, id) {
   const next = fontPair(id), old = doc.fontPair && FONT_PAIRS[doc.fontPair] ? fontPair(doc.fontPair) : null;
   for (const r of runs(doc)) {
-    if (!r.text) continue;
+    if (!r.text && !old) continue; // (empty runs are only remapped when the old pair is known)
     if (old && r.font === old.heading) r.font = next.heading;
     else if (old && r.font === old.body) r.font = next.body;
     else if (!old) r.font = (r.size || 10) >= 16 ? next.heading : next.body; // a file without a font pair: big text is a heading

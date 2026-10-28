@@ -86,7 +86,7 @@ export default {
         'A Microsoft descontinuou o Publisher em outubro de 2026 e sugere usar o Word, o PowerPoint ou o Designer no lugar dele. São bons programas, mas não abrem arquivos .pub e não foram feitos para montar uma página. O Pubwork foi: caixas de texto que você coloca onde quiser, texto que continua de uma caixa para a outra, imagens, formas, tabelas e páginas.',
       ],
       steps: [
-        ['Abra um arquivo antigo ou um modelo', 'Arraste um arquivo .pub ou escolha um dos mais de 90 modelos grátis.'],
+        ['Abra um arquivo antigo ou um modelo', 'Arraste um arquivo .pub ou escolha um dos mais de 150 modelos grátis.'],
         ['Altere como no Publisher', 'Clique duas vezes num texto para digitar. Arraste as coisas para mudá-las de lugar. Um clique muda todas as cores ou fontes.'],
         ['Imprima ou salve', 'Imprima livretos, etiquetas e várias cópias por folha, ou salve em PDF, Word ou imagens.'],
       ],
@@ -589,7 +589,7 @@ export default {
           ],
           [
             "Salvar como",
-            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, página web, e-mail, JPG, PNG",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, página web, e-mail, JPG, PNG, SVG, Scribus, InDesign (IDML)",
             "PDF, JPG, PNG",
             "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
             "PDF, formatos do LibreOffice, imagens",
@@ -597,7 +597,7 @@ export default {
           ],
           [
             "Modelos",
-            "Mais de 90",
+            "Mais de 150",
             "8",
             "123",
             "Poucos para diagramação",
@@ -663,7 +663,7 @@ export default {
           "Pubwork: se você quer abrir, alterar, imprimir e converter arquivos .pub em qualquer navegador, inclusive no celular ou tablet, no seu idioma, com mala direta, livretos e etiquetas.",
           "LibreOffice Draw: se você prefere um programa instalado no computador, como parte de um pacote de escritório gratuito completo.",
           "stillPUB: um editor simples no navegador que também importa documentos do Word e PDFs.",
-          "LayoutSplat: se você precisa de exportações profissionais de diagramação, como IDML ou Scribus.",
+          "LayoutSplat: outro editor no navegador, com muitas folhas de etiquetas Avery e a opção de hospedá-lo você mesmo.",
           "Um conversor on-line: se você só precisa de um PDF rápido e não se importa de enviar seu arquivo."
         ]
       ],

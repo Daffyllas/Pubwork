@@ -14,9 +14,11 @@ Windows, Mac, Linux, Chromebook, iPhone, iPad and Android.
 - **Edits** text, fonts, colours, pictures and layout: bulleted and numbered lists, line and paragraph spacing, free rotation,
   picture cropping, table rows/columns/merged cells, drag-to-reorder pages, styles, master pages, guides, spell checking and undo
 - **Saves as** PDF (searchable text, embedded fonts, optional print-ready CMYK with bleed and crop marks),
-  Word (.docx), PowerPoint (.pptx), LibreOffice Draw (.odg), XPS, web page, e-mail, PNG and JPG
+  Word (.docx), PowerPoint (.pptx), LibreOffice Draw (.odg), XPS, web page, e-mail, PNG and JPG — and, for designers,
+  SVG, Scribus (.sla) and Adobe InDesign (.idml) with the text still editable
 - **Prints** booklets, posters on several sheets, folded cards, labels and business cards
-- **Makes new documents** from templates (flyers, menus, newsletters, invitations, certificates, calendars, labels…)
+- **Makes new documents** from over 150 templates (flyers, menus, newsletters, invitations, certificates, calendars,
+  labels, church and community notices, family and life events…) with colour schemes and font sets
 - **Mail merge** from CSV or Excel, with a photo per copy, catalogues, and one e-mail per person
 - **Converts many files at once**
 - **Works offline** after the first visit (service worker made by `tools/make-sw.mjs`)

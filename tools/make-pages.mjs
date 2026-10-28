@@ -262,9 +262,9 @@ Microsoft retired Publisher in October 2026; ${cfg.name} lets people keep using 
 ## What it does
 - Opens .pub files from Publisher 97 to Microsoft 365, with text, pictures, shapes, tables, WordArt and linked text boxes
 - Edits text, fonts, colours, pictures, tables and layout; lists, styles, master pages, spell check, undo
-- Saves as PDF (searchable, embedded fonts, print-ready CMYK with bleed and crop marks), Word (.docx), PowerPoint (.pptx), LibreOffice Draw (.odg), XPS, web page, e-mail, JPG and PNG
+- Saves as PDF (searchable, embedded fonts, print-ready CMYK with bleed and crop marks), Word (.docx), PowerPoint (.pptx), LibreOffice Draw (.odg), XPS, web page, e-mail, JPG and PNG, plus SVG, Scribus (.sla) and Adobe InDesign (.idml) for designers
 - Prints booklets, posters over several sheets, folded cards, labels and business cards
-- More than 90 templates (flyers, menus, newsletters, invitations, certificates, calendars, labels)
+- More than 150 templates (flyers, menus, newsletters, invitations, certificates, calendars, labels, community and family events)
 - Mail merge from CSV or Excel, with a photo per copy, catalogues and one e-mail per person
 - Converts many .pub files at once
 - Works offline after the first visit

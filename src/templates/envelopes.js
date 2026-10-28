@@ -47,7 +47,7 @@ export const envelopes = [
     id: 'env-merge', cat: 'envelopes', name: 'env3.name', scheme: 'forest', fonts: 'modern',
     get size() { return usPaper() ? 'env-10' : 'env-dl'; },
     build(k) {
-      const { W } = k;
+      const { W, s } = k;
       sender(k, 12, 10, W * 0.42);
       recipient(k, mergeFields(s));
     },

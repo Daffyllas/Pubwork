@@ -87,7 +87,7 @@ export default {
         'Microsoft a arrêté Publisher en octobre 2026 et propose à la place Word, PowerPoint ou Designer. Ce sont de bons programmes, mais ils n’ouvrent pas les fichiers .pub et ne sont pas faits pour mettre en page. Pubwork, si : des zones de texte que vous placez où vous voulez, du texte qui passe d’une zone à l’autre, des images, des formes, des tableaux et des pages.',
       ],
       steps: [
-        ['Ouvrez un ancien fichier ou un modèle', 'Glissez un fichier .pub, ou choisissez l’un des plus de 90 modèles gratuits.'],
+        ['Ouvrez un ancien fichier ou un modèle', 'Glissez un fichier .pub, ou choisissez l’un des plus de 150 modèles gratuits.'],
         ['Modifiez-le comme dans Publisher', 'Double-cliquez sur un texte pour écrire. Faites glisser les éléments pour les déplacer. Un clic change toutes les couleurs ou les polices.'],
         ['Imprimez ou enregistrez', 'Imprimez des livrets, des étiquettes et plusieurs exemplaires par feuille, ou enregistrez en PDF, Word ou images.'],
       ],
@@ -590,7 +590,7 @@ export default {
           ],
           [
             "Enregistrer en",
-            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, page web, e-mail, JPG, PNG",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, page web, e-mail, JPG, PNG, SVG, Scribus, InDesign (IDML)",
             "PDF, JPG, PNG",
             "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
             "PDF, formats LibreOffice, images",
@@ -598,7 +598,7 @@ export default {
           ],
           [
             "Modèles",
-            "Plus de 90",
+            "Plus de 150",
             "8",
             "123",
             "Peu pour la mise en page",
@@ -664,7 +664,7 @@ export default {
           "Pubwork : pour ouvrir, modifier, imprimer et convertir des fichiers .pub dans n’importe quel navigateur, y compris sur téléphone ou tablette, dans votre langue, avec publipostage, livrets et étiquettes.",
           "LibreOffice Draw : si vous préférez un logiciel installé sur votre ordinateur, dans une suite bureautique gratuite complète.",
           "stillPUB : un éditeur simple dans le navigateur, qui peut aussi importer des documents Word et des PDF.",
-          "LayoutSplat : si vous avez besoin d’exports professionnels de mise en page comme IDML ou Scribus.",
+          "LayoutSplat : un autre éditeur dans le navigateur, avec de nombreuses planches d’étiquettes Avery et la possibilité de l’héberger vous-même.",
           "Un convertisseur en ligne : si vous voulez juste un PDF rapide et que l’envoi de votre fichier ne vous gêne pas."
         ]
       ],

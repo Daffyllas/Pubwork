@@ -259,7 +259,7 @@ class PageWriter {
       const squeeze = natural > 0 ? Math.max(40, Math.min(250, (target / natural) * 100)) : 100;
       const col = st.color || { c: rgb(0, 0, 0), a: 1 };
       const opts = { x, y: baseline, size: fontSize, font, color: col.c, opacity: col.a };
-      if (w.face.synthItalic) opts.xSkew = { type: 'degrees', angle: 12 };
+      if (w.face.synthItalic) opts.ySkew = { type: 'degrees', angle: 12 }; // slants the letters (xSkew would tilt the baseline)
       P.pushOperators(pushGraphicsState());
       if (Math.abs(squeeze - 100) > 0.5) P.pushOperators(setCharacterSqueeze(squeeze));
       if (cs) P.pushOperators(setCharacterSpacing(cs));

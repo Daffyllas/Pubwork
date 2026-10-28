@@ -28,7 +28,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const PT = 96 / 72; // CSS px per point at 100%
 // pages generated into sub-folders say where the site's root is, so shared files are found from anywhere
 const ROOT = new URL(document.querySelector('meta[name="pw-root"]')?.content || './', document.baseURI);
-const FORMAT_NAME = { pdf: 'PDF', jpg: 'JPG', png: 'PNG', pubwork: 'Pubwork', docx: 'Word', odg: 'ODG', pptx: 'PowerPoint', html: 'HTML', eml: 'E-mail', xps: 'XPS' };
+const FORMAT_NAME = { pdf: 'PDF', jpg: 'JPG', png: 'PNG', pubwork: 'Pubwork', docx: 'Word', odg: 'ODG', pptx: 'PowerPoint', html: 'HTML', eml: 'E-mail', xps: 'XPS', svg: 'SVG', sla: 'Scribus', idml: 'InDesign' };
 // inside a claude.ai artifact only some file endings may be saved, so the Pubwork file goes in a .zip
 const IN_ARTIFACT = !!window.claude?.use;
 const OWN_EXT = IN_ARTIFACT ? '.pubwork.zip' : '.pubwork';
@@ -220,7 +220,7 @@ class App {
   }
   renderBatchFormats() {
     const box = $('batchFormats'); box.hidden = false;
-    box.innerHTML = ['pdf', 'docx', 'jpg', 'png'].map((f) => `<button data-f="${f}" class="${f === this.batchFormat ? 'on' : ''}" aria-pressed="${f === this.batchFormat}">${esc(t('batch.to', { format: FORMAT_NAME[f] }))}</button>`).join('');
+    box.innerHTML = ['pdf', 'docx', 'jpg', 'png', 'svg', 'sla', 'idml'].map((f) => `<button data-f="${f}" class="${f === this.batchFormat ? 'on' : ''}" aria-pressed="${f === this.batchFormat}">${esc(t('batch.to', { format: FORMAT_NAME[f] }))}</button>`).join('');
     box.querySelectorAll('[data-f]').forEach((b) => { b.onclick = () => { this.batchFormat = b.dataset.f; this.renderBatchFormats(); }; });
   }
   // many .pub files -> one .zip with a PDF (or Word file, or pictures) for each, and a list of what happened
@@ -974,11 +974,12 @@ class App {
     if (!this.doc) return;
     const o = this.saveChoice();
     $('sizeRow').hidden = !(o.format === 'jpg' || o.format === 'png');
-    $('pagesRow').hidden = this.doc.pages.length < 2 || !['pdf', 'jpg', 'png'].includes(o.format);
+    $('pagesRow').hidden = this.doc.pages.length < 2 || !['pdf', 'jpg', 'png', 'svg'].includes(o.format);
     $('fmtOdg').hidden = $('fmtXps').hidden = $('fmtEml').hidden = IN_ARTIFACT; // the artifact viewer can't save .odg, .xps or .eml files
+    if ($('fmtSla')) $('fmtSla').hidden = $('fmtIdml').hidden = IN_ARTIFACT; // nor Scribus or InDesign files
     $('saveGo').textContent = t('save.go', { format: FORMAT_NAME[o.format] });
     const many = (o.pages ? o.pages.length : this.doc.pages.length) > 1;
-    $('saveHint').textContent = (o.format === 'jpg' || o.format === 'png') && many ? t('save.zipHint') : '';
+    $('saveHint').textContent = ['jpg', 'png', 'svg'].includes(o.format) && many ? t('save.zipHint') : '';
     $('saveHint').hidden = !$('saveHint').textContent;
   }
   async save({ format, size, pages }) {
@@ -988,7 +989,7 @@ class App {
     this.saving = true;
     const progress = (k, total) => this.busy(true, k >= total ? t('busy.finishing') : t('busy.page', { n: k + 1, total }));
     progress(0, (pages || this.pageEls).length);
-    if (!['pdf', 'jpg', 'png'].includes(format)) this.busy(true, t('busy.finishing'));
+    if (!['pdf', 'jpg', 'png', 'svg'].includes(format)) this.busy(true, t('busy.finishing'));
     try {
       await this.settled;
       const out = await this.exportOut(format, { size, pages, onProgress: progress });
@@ -1026,6 +1027,9 @@ App.prototype.exportOut = async function exportOut(format, { size = 'print', pag
   if (format === 'html') { const { exportHtml } = await import('./export/html.js'); return exportHtml(this.doc, this.pageEls); }
   if (format === 'eml') { const { exportEml } = await import('./export/eml.js'); return exportEml(this.doc, this.pageEls); }
   if (format === 'xps') { const { exportXps } = await import('./export/xps.js'); return exportXps(this.doc, this.pageEls); }
+  if (format === 'svg') { const { exportSvg } = await import('./export/svg.js'); return exportSvg(this.doc, this.pageEls, { pages, onProgress }); }
+  if (format === 'sla') { const { exportSla } = await import('./export/sla.js'); return exportSla(this.doc, this.pageEls); }
+  if (format === 'idml') { const { exportIdml } = await import('./export/idml.js'); return exportIdml(this.doc, this.pageEls); }
   const { exportImages } = await import('./export/images.js');
   return exportImages(this.doc, this.pageEls, { format, size, pages, onProgress });
 };

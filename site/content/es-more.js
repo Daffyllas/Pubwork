@@ -86,7 +86,7 @@ export default {
         'Microsoft retiró Publisher en octubre de 2026 y propone usar Word, PowerPoint o Designer en su lugar. Son buenos programas, pero no abren archivos .pub y no están pensados para diseñar una página. Pubwork sí: cuadros de texto que coloca donde quiera, texto que pasa de un cuadro al siguiente, imágenes, formas, tablas y páginas.',
       ],
       steps: [
-        ['Abra un archivo antiguo o una plantilla', 'Arrastre un archivo .pub o elija una de las más de 90 plantillas gratuitas.'],
+        ['Abra un archivo antiguo o una plantilla', 'Arrastre un archivo .pub o elija una de las más de 150 plantillas gratuitas.'],
         ['Cámbielo como en Publisher', 'Haga doble clic en un texto para escribir. Arrastre los elementos para moverlos. Con un clic cambia todos los colores o fuentes.'],
         ['Imprima o guarde', 'Imprima folletos plegados, etiquetas y varias copias por hoja, o guárdelo en PDF, Word o como imágenes.'],
       ],
@@ -589,7 +589,7 @@ export default {
           ],
           [
             "Guardar como",
-            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, página web, correo, JPG, PNG",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, página web, correo, JPG, PNG, SVG, Scribus, InDesign (IDML)",
             "PDF, JPG, PNG",
             "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
             "PDF, formatos de LibreOffice, imágenes",
@@ -597,7 +597,7 @@ export default {
           ],
           [
             "Plantillas",
-            "Más de 90",
+            "Más de 150",
             "8",
             "123",
             "Pocas para maquetación",
@@ -663,7 +663,7 @@ export default {
           "Pubwork: si quiere abrir, cambiar, imprimir y convertir archivos .pub en cualquier navegador, también en el móvil o la tableta, en su idioma, con combinación de correspondencia, folletos y etiquetas.",
           "LibreOffice Draw: si prefiere un programa instalado en su ordenador, dentro de una suite ofimática gratuita completa.",
           "stillPUB: un editor sencillo en el navegador que también importa documentos de Word y PDF.",
-          "LayoutSplat: si necesita exportaciones profesionales de maquetación como IDML o Scribus.",
+          "LayoutSplat: otro editor en el navegador, con muchas hojas de etiquetas Avery y la opción de alojarlo usted mismo.",
           "Un conversor en línea: si solo necesita un PDF rápido y no le importa que su archivo se suba."
         ]
       ],

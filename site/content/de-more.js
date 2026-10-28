@@ -86,7 +86,7 @@ export default {
         'Microsoft hat Publisher im Oktober 2026 eingestellt und empfiehlt stattdessen Word, PowerPoint oder Designer. Das sind gute Programme, aber sie öffnen keine .pub-Dateien und sind nicht dafür gemacht, eine Seite zu gestalten. Pubwork schon: Textfelder, die Sie überall hinsetzen, Text, der von einem Feld ins nächste fließt, Bilder, Formen, Tabellen und Seiten.',
       ],
       steps: [
-        ['Alte Datei oder Vorlage öffnen', 'Ziehen Sie eine .pub-Datei hinein oder wählen Sie eine von über 90 kostenlosen Vorlagen.'],
+        ['Alte Datei oder Vorlage öffnen', 'Ziehen Sie eine .pub-Datei hinein oder wählen Sie eine von über 150 kostenlosen Vorlagen.'],
         ['Ändern wie in Publisher', 'Doppelklicken Sie auf Text, um zu schreiben. Ziehen Sie Dinge, um sie zu verschieben. Ein Klick ändert alle Farben oder Schriften.'],
         ['Drucken oder speichern', 'Drucken Sie Broschüren, Etiketten und mehrere Kopien pro Blatt, oder speichern Sie als PDF, Word oder Bild.'],
       ],
@@ -589,7 +589,7 @@ export default {
           ],
           [
             "Speichern als",
-            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, Webseite, E-Mail, JPG, PNG",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, Webseite, E-Mail, JPG, PNG, SVG, Scribus, InDesign (IDML)",
             "PDF, JPG, PNG",
             "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
             "PDF, LibreOffice-Formate, Bilder",
@@ -597,7 +597,7 @@ export default {
           ],
           [
             "Vorlagen",
-            "Über 90",
+            "Über 150",
             "8",
             "123",
             "Wenige für Layouts",
@@ -663,7 +663,7 @@ export default {
           "Pubwork: wenn Sie .pub-Dateien in jedem Browser öffnen, ändern, drucken und umwandeln möchten, auch auf Handy oder Tablet, in Ihrer Sprache, mit Serienbrief, Broschüren und Etiketten.",
           "LibreOffice Draw: wenn Sie lieber ein installiertes Programm als Teil eines kompletten kostenlosen Office-Pakets nutzen.",
           "stillPUB: ein einfacher Browser-Editor, der auch Word-Dokumente und PDFs einlesen kann.",
-          "LayoutSplat: wenn Sie professionelle Layout-Exporte wie IDML oder Scribus brauchen.",
+          "LayoutSplat: ein weiterer Browser-Editor, mit vielen Avery-Etikettenbögen und der Möglichkeit, ihn selbst zu betreiben.",
           "Ein Online-Konverter: wenn Sie nur schnell ein PDF brauchen und das Hochladen Ihrer Datei Sie nicht stört."
         ]
       ],

@@ -86,7 +86,7 @@ export default {
         'Microsoft ha dismesso Publisher a ottobre 2026 e al suo posto suggerisce Word, PowerPoint o Designer. Sono ottimi programmi, ma non aprono i file .pub e non sono fatti per impaginare. Pubwork sì: caselle di testo da mettere dove vuoi, testo che scorre da una casella all’altra, immagini, forme, tabelle e pagine.',
       ],
       steps: [
-        ['Apri un vecchio file o un modello', 'Trascina un file .pub, oppure scegli uno degli oltre 90 modelli gratuiti.'],
+        ['Apri un vecchio file o un modello', 'Trascina un file .pub, oppure scegli uno degli oltre 150 modelli gratuiti.'],
         ['Modificalo come in Publisher', 'Fai doppio clic su un testo per scrivere. Trascina gli elementi per spostarli. Un clic cambia tutti i colori o i caratteri.'],
         ['Stampa o salva', 'Stampa libretti, etichette e più copie per foglio, oppure salva in PDF, Word o come immagini.'],
       ],
@@ -589,7 +589,7 @@ export default {
           ],
           [
             "Salva come",
-            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, pagina web, e-mail, JPG, PNG",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, pagina web, e-mail, JPG, PNG, SVG, Scribus, InDesign (IDML)",
             "PDF, JPG, PNG",
             "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
             "PDF, formati LibreOffice, immagini",
@@ -597,7 +597,7 @@ export default {
           ],
           [
             "Modelli",
-            "Più di 90",
+            "Più di 150",
             "8",
             "123",
             "Pochi per l’impaginazione",
@@ -663,7 +663,7 @@ export default {
           "Pubwork: se vuoi aprire, modificare, stampare e convertire file .pub in qualsiasi browser, anche su telefono o tablet, nella tua lingua, con stampa unione, opuscoli ed etichette.",
           "LibreOffice Draw: se preferisci un programma installato sul computer, parte di una suite per ufficio gratuita e completa.",
           "stillPUB: un editor semplice nel browser che può anche importare documenti Word e PDF.",
-          "LayoutSplat: se ti servono esportazioni professionali di impaginazione come IDML o Scribus.",
+          "LayoutSplat: un altro editor nel browser, con molti fogli di etichette Avery e la possibilità di ospitarlo in proprio.",
           "Un convertitore online: se ti serve solo un PDF veloce e non ti dispiace caricare il file."
         ]
       ],
