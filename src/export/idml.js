@@ -4,6 +4,7 @@
 // vector paths. Tables come as a group of text frames with their lines. Anything a layout program can't
 // draw (gradients, shadows, cut pictures) comes as a sharp picture of what was on screen (see collect.js).
 import { zipSync, strToU8 } from 'fflate';
+import { withFonts } from './docfonts.js';
 import { collectPages, parseBorder, tableGrid, withLists } from './collect.js';
 import { safeName } from './stage.js';
 import { fieldText } from '../render.js';
@@ -128,7 +129,8 @@ function fontOf(name, ctx) {
   return fam;
 }
 function charRange(r, size, lead, ctx, inner) {
-  const fam = fontOf(r.font, ctx), style = fontStyle(r.bold, r.italic);
+  const fc = ctx.face(String(r.font || 'Times New Roman').trim(), !!r.bold, !!r.italic);
+  const fam = fontOf(fc.family, ctx), style = fontStyle(fc.bold, fc.italic);
   ctx.fonts.get(fam).add(style);
   let a = ` AppliedCharacterStyle="CharacterStyle/$ID/[No character style]" FontStyle="${style}" PointSize="${n(size)}" FillColor="${ctx.col.get(r.color || '#000000')}"`;
   if (r.underline) a += ' Underline="true"';
@@ -255,10 +257,10 @@ const STYLES = (font) => `${HEAD}<idPkg:Styles ${PKG} ${DOM}>`
   + '</idPkg:Styles>';
 const STROKES = '<StrokeStyle Self="StrokeStyle/$ID/Solid" Name="$ID/Solid"/><StrokeStyle Self="StrokeStyle/$ID/Dashed" Name="$ID/Dashed"/><StrokeStyle Self="StrokeStyle/$ID/Dotted" Name="$ID/Dotted"/>';
 
-export async function exportIdml(doc, pageEls) {
+export async function exportIdml(doc, pageEls, { fonts = null } = {}) {
   const pages = await collectPages(doc, pageEls);
   if (!pages.length) throw new Error('There are no pages to save');
-  const ctx = { ids: new Ids(), col: new Colours(), fonts: new Map(), stories: [], images: 0, lastSize: 10, layer: 'uLayer', pageCount: pages.length };
+  const ctx = { face: fonts ? fonts.face : (f, bold, italic) => ({ family: f, bold, italic }), ids: new Ids(), col: new Colours(), fonts: new Map(), stories: [], images: 0, lastSize: 10, layer: 'uLayer', pageCount: pages.length };
   const spreads = [];
   for (let i = 0; i < pages.length; i++) {
     const pg = pages[i];
@@ -306,5 +308,6 @@ export async function exportIdml(doc, pageEls) {
   const entries = { mimetype: [strToU8('application/vnd.adobe.indesign-idml-package'), { level: 0 }] };
   for (const [k, v] of Object.entries(files)) entries[k] = strToU8(v);
   const bytes = zipSync(entries, { level: 6 });
-  return { name: `${safeName(doc.name)}.idml`, blob: new Blob([bytes], { type: 'application/vnd.adobe.indesign-idml-package' }), bytes };
+  const name = `${safeName(doc.name)}.idml`;
+  return withFonts(doc, [{ name, bytes }], fonts, 'InDesign', { name, blob: new Blob([bytes], { type: 'application/vnd.adobe.indesign-idml-package' }), bytes });
 }

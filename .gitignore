@@ -13,6 +13,7 @@ dist/
 /public/sitemap.xml
 /public/robots.txt
 /public/pdffonts/
+/public/docfonts/
 
 # sources fetched by tools/reader/fetch.sh, and build output
 tools/reader/dl/

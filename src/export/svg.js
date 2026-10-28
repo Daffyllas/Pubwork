@@ -9,6 +9,8 @@ import { stagePages, safeName } from './stage.js';
 import { bytesToB64, blobToB64 } from './pagetext.js';
 import { embeddedFontBytes } from '../fonts.js';
 import { t } from '../i18n/index.js';
+import { withFonts } from './docfonts.js';
+import { Outliner } from './outline.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c])).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/g, '');
 const f = (v) => +(+v).toFixed(2);
@@ -16,6 +18,7 @@ const parsePt = (v) => parseFloat(v) || 0; // inline styles are written in pt by
 const rotationOf = (el) => { const m = /rotate\((-?[\d.]+)deg\)/.exec(el.style.transform || ''); return m ? parseFloat(m[1]) : 0; };
 const unq = (s) => s.trim().replace(/^["']|["']$/g, '');
 const TWINS = { tinos: 'Liberation Serif', arimo: 'Liberation Sans', cousine: 'Liberation Mono' };
+let PLAN = null, OUTLINE = null; // the font plan of the export under way; the letter-outliner for "text as shapes"
 const GENERIC = new Set(['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui']);
 
 // 'rgb(1, 2, 3)' / 'rgba(…, .5)' / '#abc' -> { hex: '#010203', a } ; null for transparent
@@ -84,6 +87,13 @@ class PageSvg {
       const n = unq(raw).replace(/^pw-embedded-/i, ''); if (!n) continue;
       // the free stand-ins have look-alikes with the same letter widths on many computers
       for (const x of [n, TWINS[n.toLowerCase()]]) if (x && !fams.some((y) => y.toLowerCase() === x.toLowerCase())) fams.push(x);
+    }
+    // a Microsoft font this computer doesn't have was drawn with its look-alike: name that one (export/docfonts.js)
+    const swapTo = PLAN && fams.length && PLAN.standIn(fams[0]);
+    if (swapTo) {
+      PLAN.face(fams[0], (parseInt(cs.fontWeight, 10) || 400) >= 600, cs.fontStyle !== 'normal');
+      const drop = fams.shift(); const rest = fams.filter((y) => y.toLowerCase() !== swapTo.toLowerCase() && y.toLowerCase() !== drop.toLowerCase());
+      fams.length = 0; fams.push(swapTo, ...rest);
     }
     const stroke = parseFloat(cs.webkitTextStrokeWidth) > 0 ? color(cs.webkitTextStrokeColor) || color(cs.color) : null;
     s = {
@@ -183,7 +193,29 @@ class PageSvg {
     if (diff('spacing') && (st.spacing || base)) a.push(`letter-spacing="${f(st.spacing * this.k)}"`);
     return a.length ? ' ' + a.join(' ') : '';
   }
-  text(itemEl) {
+  // "text as shapes": each word as the outlines of its letters (export/outline.js); a word we can't draw stays text
+  async outlined(lines) {
+    let out = '';
+    for (const ln of lines) {
+      const y = this.Y(ln.base);
+      for (const w of ln.words) {
+        const st = w.st, size = (w.size || st.sizePx) * this.k, txt = w.text.replace(/ +$/, '') + (w.hyphen ? '-' : '');
+        const x = this.X(w.left), shape = await OUTLINE.word(txt, st, x, y, size, st.spacing * this.k);
+        if (!shape) { out += `<text xml:space="preserve" x="${f(x)}" y="${f(y)}"${st.lang ? ` xml:lang="${esc(st.lang)}"` : ''}${this.textAttrs(st, w.size || st.sizePx)}>${esc(txt)}</text>`; continue; }
+        const fill = fillAttr(st.color || (st.stroke ? null : { hex: '#000000', a: 1 })).trim() || 'fill="none"';
+        const fake = shape.bold ? ` stroke="${(st.color || { hex: '#000000' }).hex}" stroke-width="${f(size * 0.03)}" stroke-linejoin="round"` : '';
+        const stroke = st.stroke ? ` stroke="${st.stroke.hex}" stroke-width="${f(Math.max(0.25, st.strokeW * this.k))}"` : fake;
+        if (st.shadow) { const dd = size * 0.06; out += `<path transform="translate(${f(dd)} ${f(dd)})" d="${shape.d}" fill="#000000" fill-opacity="${f(0.35 * (st.color?.a ?? 1))}"/>`; }
+        let lines2 = '';
+        const bar = (dy, th) => `<rect x="${f(x)}" y="${f(y + dy)}" width="${f(shape.end - x)}" height="${f(th)}" ${fill}/>`;
+        if (st.under) lines2 += bar(size * 0.1, size * 0.05);
+        if (st.strike) lines2 += bar(-size * 0.3, size * 0.05);
+        out += `<path aria-label="${esc(txt)}" d="${shape.d}" ${fill}${stroke}/>${lines2}`;
+      }
+    }
+    return out;
+  }
+  async text(itemEl) {
     const r = itemEl.getBoundingClientRect(), cs = getComputedStyle(itemEl);
     const clip = itemEl.classList.contains('text')
       ? { left: r.left + parseFloat(cs.borderLeftWidth), right: r.right - parseFloat(cs.borderRightWidth), top: r.top + parseFloat(cs.borderTopWidth), bottom: r.bottom - parseFloat(cs.borderBottomWidth) }
@@ -200,7 +232,8 @@ class PageSvg {
       else lines.push({ base: w.base, words: [w], right: w.right, drop: !!w.size, size });
     }
     let out = '';
-    for (const ln of lines) {
+    if (OUTLINE) out = await this.outlined(lines);
+    else for (const ln of lines) {
       const b = ln.words[0].st, bs = ln.words[0].size || b.sizePx;
       const y = f(this.Y(ln.base));
       let spans = '', shadow = '';
@@ -371,7 +404,7 @@ async function pageSvg(el, model, n, title) {
     let part = '';
     if (it.matches('svg.shape')) part = P.shape(it);
     else if (it.classList.contains('pic')) part = await P.picture(it);
-    else if (it.classList.contains('text') || it.classList.contains('table')) part = P.boxes(it) + P.text(it);
+    else if (it.classList.contains('text') || it.classList.contains('table')) part = P.boxes(it) + await P.text(it);
     if (!part) continue;
     const deg = +it.dataset.pwRotate || 0;
     if (deg) {
@@ -391,8 +424,9 @@ async function pageSvg(el, model, n, title) {
 }
 
 // -> { name, blob }: one .svg, or a .zip with an .svg for each page
-export async function exportSvg(doc, pageEls, { pages = null, onProgress = () => {} } = {}) {
+export async function exportSvg(doc, pageEls, { pages = null, onProgress = () => {}, fonts = null, outline = false } = {}) {
   const which = pages || pageEls.map((_, i) => i);
+  PLAN = outline ? null : fonts; OUTLINE = outline ? new Outliner(embeddedFontBytes) : null;
   const stage = await stagePages(which.map((i) => pageEls[i]));
   try {
     const files = [];
@@ -413,9 +447,12 @@ export async function exportSvg(doc, pageEls, { pages = null, onProgress = () =>
       files.push({ name: `${safeName(doc.name)}${many ? ` - ${t('export.page', { n: pageNo })}` : ''}.svg`, text });
     }
     onProgress(stage.pages.length, stage.pages.length);
-    if (files.length === 1) return { name: files[0].name, blob: new Blob([files[0].text], { type: 'image/svg+xml' }) };
+    const single = files.length === 1 ? { name: files[0].name, blob: new Blob([files[0].text], { type: 'image/svg+xml' }) } : null;
+    // text drawn as shapes needs no fonts
+    const packed = await withFonts(doc, files.map((fl) => ({ name: fl.name, bytes: strToU8(fl.text) })), outline ? null : fonts, 'SVG', single);
+    if (packed) return packed;
     const entries = {};
     for (const fl of files) entries[fl.name] = [strToU8(fl.text), { level: 6 }];
     return { name: `${safeName(doc.name)} (SVG).zip`, blob: new Blob([zipSync(entries)], { type: 'application/zip' }) };
-  } finally { stage.done(); }
+  } finally { stage.done(); PLAN = null; OUTLINE = null; }
 }

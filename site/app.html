@@ -487,6 +487,13 @@ body.gallery-open{overflow:hidden}
       <label class="choice"><input type="radio" name="pages" value="current"><span class="t" id="pagesCur">This page</span></label>
     </div>
   </fieldset>
+  <fieldset id="textRow" hidden>
+    <legend data-t="save.svgText">Text</legend>
+    <div class="row">
+      <label class="choice"><input type="radio" name="svgtext" value="text" checked><span class="t" data-t="save.svgTextEdit">Editable text</span></label>
+      <label class="choice"><input type="radio" name="svgtext" value="shapes"><span class="t" data-t="save.svgTextShapes">Text as shapes</span></label>
+    </div>
+  </fieldset>
   <p class="hint" id="saveHint"></p>
   <div class="actions"><button class="btn" id="saveCancel" data-t="save.cancel">Cancel</button><button class="btn primary" id="saveGo">Save</button></div>
 </div>

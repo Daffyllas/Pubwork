@@ -968,7 +968,7 @@ class App {
   saveChoice() {
     const v = (name) => document.querySelector(`#savePanel input[name="${name}"]:checked`)?.value;
     const pages = v('pages') === 'current' && this.doc.pages.length > 1 ? [this.current || 0] : null;
-    return { format: v('fmt') || 'pdf', size: v('size') || 'social', pages };
+    return { format: v('fmt') || 'pdf', size: v('size') || 'social', pages, outline: v('fmt') === 'svg' && v('svgtext') === 'shapes' };
   }
   updateSavePanel() {
     if (!this.doc) return;
@@ -979,10 +979,15 @@ class App {
     if ($('fmtSla')) $('fmtSla').hidden = $('fmtIdml').hidden = IN_ARTIFACT; // nor Scribus or InDesign files
     $('saveGo').textContent = t('save.go', { format: FORMAT_NAME[o.format] });
     const many = (o.pages ? o.pages.length : this.doc.pages.length) > 1;
-    $('saveHint').textContent = ['jpg', 'png', 'svg'].includes(o.format) && many ? t('save.zipHint') : '';
+    $('textRow').hidden = o.format !== 'svg';
+    const hints = [];
+    if (['jpg', 'png', 'svg'].includes(o.format) && many) hints.push(t('save.zipHint'));
+    if (o.format === 'svg' && o.outline) hints.push(t('save.svgShapesHint'));
+    else if (['svg', 'sla', 'idml'].includes(o.format)) hints.push(t('save.fontsHint'));
+    $('saveHint').textContent = hints.join(' ');
     $('saveHint').hidden = !$('saveHint').textContent;
   }
-  async save({ format, size, pages }) {
+  async save({ format, size, pages, outline = false }) {
     if (this.saving) return;
     if (this.editor.editing) this.editor.endEdit();
     this.leaveMasters('export');
@@ -992,7 +997,7 @@ class App {
     if (!['pdf', 'jpg', 'png', 'svg'].includes(format)) this.busy(true, t('busy.finishing'));
     try {
       await this.settled;
-      const out = await this.exportOut(format, { size, pages, onProgress: progress });
+      const out = await this.exportOut(format, { size, pages, onProgress: progress, outline });
       window.__lastSave = out; // tests read the result here
       const how = await download(out.blob, out.name);
       if (how === 'saved') track('save', { format, size: ['jpg', 'png'].includes(format) ? size : undefined, pages: (pages || this.pageEls).length });
@@ -1019,7 +1024,7 @@ async function filesFromDrop(dt) {
   return out;
 }
 // a PDF, Word, ODG or pictures of the open document -> { blob, name, report? }
-App.prototype.exportOut = async function exportOut(format, { size = 'print', pages = null, onProgress } = {}) {
+App.prototype.exportOut = async function exportOut(format, { size = 'print', pages = null, onProgress, outline = false } = {}) {
   if (format === 'pdf') { const { exportPdf } = await import('./export/pdf.js'); return exportPdf(this.doc, this.pageEls, { pages, embeddedFonts: embeddedFontBytes, onProgress }); }
   if (format === 'docx') { const { exportDocx } = await import('./export/docx.js'); return exportDocx(this.doc, this.pageEls); }
   if (format === 'odg') { const { exportOdg } = await import('./export/odg.js'); return exportOdg(this.doc, this.pageEls); }
@@ -1027,9 +1032,13 @@ App.prototype.exportOut = async function exportOut(format, { size = 'print', pag
   if (format === 'html') { const { exportHtml } = await import('./export/html.js'); return exportHtml(this.doc, this.pageEls); }
   if (format === 'eml') { const { exportEml } = await import('./export/eml.js'); return exportEml(this.doc, this.pageEls); }
   if (format === 'xps') { const { exportXps } = await import('./export/xps.js'); return exportXps(this.doc, this.pageEls); }
-  if (format === 'svg') { const { exportSvg } = await import('./export/svg.js'); return exportSvg(this.doc, this.pageEls, { pages, onProgress }); }
-  if (format === 'sla') { const { exportSla } = await import('./export/sla.js'); return exportSla(this.doc, this.pageEls); }
-  if (format === 'idml') { const { exportIdml } = await import('./export/idml.js'); return exportIdml(this.doc, this.pageEls); }
+  if (['svg', 'sla', 'idml'].includes(format)) {
+    // the fonts the page was really drawn with, handed over with the file (export/docfonts.js)
+    const fonts = await (await import('./export/docfonts.js')).fontPlan(this.doc, this.embedded || new Map()).catch(() => null);
+    if (format === 'svg') { const { exportSvg } = await import('./export/svg.js'); return exportSvg(this.doc, this.pageEls, { pages, onProgress, fonts, outline: !!outline }); }
+    if (format === 'sla') { const { exportSla } = await import('./export/sla.js'); return exportSla(this.doc, this.pageEls, { fonts }); }
+    const { exportIdml } = await import('./export/idml.js'); return exportIdml(this.doc, this.pageEls, { fonts });
+  }
   const { exportImages } = await import('./export/images.js');
   return exportImages(this.doc, this.pageEls, { format, size, pages, onProgress });
 };

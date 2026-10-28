@@ -6,9 +6,9 @@
   "type": "module",
   "license": "MPL-2.0",
   "scripts": {
-    "predev": "node tools/make-pdf-fonts.mjs && node tools/make-pages.mjs",
+    "predev": "node tools/make-pdf-fonts.mjs && node tools/make-doc-fonts.mjs && node tools/make-pages.mjs",
     "dev": "vite",
-    "prebuild": "node tools/make-pdf-fonts.mjs && node tools/make-pages.mjs",
+    "prebuild": "node tools/make-pdf-fonts.mjs && node tools/make-doc-fonts.mjs && node tools/make-pages.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test:reader": "node tools/reader-test.mjs",

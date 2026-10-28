@@ -4,7 +4,8 @@
 // "embedded images", so the one .sla file is all that is needed); shapes and lines stay vector shapes.
 // Tables come as a group of text frames with their lines. Anything Scribus can't draw (gradients,
 // shadows, cut pictures) comes as a sharp picture of what was on screen (see collect.js).
-import { zlibSync } from 'fflate';
+import { zlibSync, strToU8 } from 'fflate';
+import { withFonts } from './docfonts.js';
 import { collectPages, parseBorder, tableGrid, withLists } from './collect.js';
 import { safeName } from './stage.js';
 import { isUS } from './layout.js';
@@ -41,7 +42,7 @@ function qCompress(bytes) {
 // ------------------------------------------------------------------ text
 const ALIGN = { left: 0, center: 1, right: 2, justify: 3 };
 function charAttrs(r, ctx, size) {
-  const font = fontFace(r.font || 'Times New Roman', r.bold, r.italic);
+  const fc = ctx.face(r.font || 'Times New Roman', !!r.bold, !!r.italic), font = fontFace(fc.family, fc.bold, fc.italic);
   ctx.fonts.add(font);
   let a = ` FONT="${x(font)}" FONTSIZE="${n(size)}" FCOLOR="${ctx.col.get(r.color || '#000000')}" FSHADE="100"`;
   const feats = [];
@@ -217,10 +218,10 @@ async function itemXml(it, ctx) {
 
 const pageAttrs = (pg, X, Y, num, master) => `PAGEXPOS="${n(X)}" PAGEYPOS="${n(Y)}" PAGEWIDTH="${n(pg.w)}" PAGEHEIGHT="${n(pg.h)}" BORDERLEFT="0" BORDERRIGHT="0" BORDERTOP="0" BORDERBOTTOM="0" NUM="${num}" NAM="${master ? 'Normal' : ''}" MNAM="${master ? '' : 'Normal'}" Size="Custom" Orientation="${pg.w > pg.h ? 1 : 0}" LEFT="0" PRESET="0" VerticalGuides="" HorizontalGuides="" AGhorizontalAutoGap="0" AGverticalAutoGap="0" AGhorizontalAutoCount="0" AGverticalAutoCount="0" AGhorizontalAutoRefer="0" AGverticalAutoRefer="0" AGSelection="0 0 0 0" pageEffectDuration="1" pageViewDuration="1" effectType="0" Dm="0" M="0" Di="0"`;
 
-export async function exportSla(doc, pageEls) {
+export async function exportSla(doc, pageEls, { fonts = null } = {}) {
   const pages = await collectPages(doc, pageEls);
   if (!pages.length) throw new Error('There are no pages to save');
-  const ctx = { col: new Colours(), fonts: new Set(), ids: 1000, lastSize: 10, pageCount: pages.length };
+  const ctx = { face: fonts ? fonts.face : (f, bold, italic) => ({ family: f, bold, italic }), col: new Colours(), fonts: new Set(), ids: 1000, lastSize: 10, pageCount: pages.length };
   let objects = '', pagesXml = '', y = PAGE_Y;
   for (let i = 0; i < pages.length; i++) {
     const pg = pages[i];
@@ -251,5 +252,6 @@ ${objects}
 </DOCUMENT>
 </SCRIBUSUTF8NEW>
 `;
-  return { name: `${safeName(doc.name)}.sla`, blob: new Blob([xml], { type: 'application/vnd.scribus' }) };
+  const name = `${safeName(doc.name)}.sla`;
+  return withFonts(doc, [{ name, bytes: strToU8(xml) }], fonts, 'Scribus', { name, blob: new Blob([xml], { type: 'application/vnd.scribus' }) });
 }
