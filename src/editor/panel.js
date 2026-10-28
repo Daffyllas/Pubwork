@@ -69,6 +69,11 @@ export class Panel {
       html += `<h2>${esc(t('panel.picture'))}</h2>
       <div class="prow"><button class="btn" id="pReplace">${esc(t(pic.data ? 'panel.replace' : 'panel.addPhoto'))}</button>${pic.tint ? `<label class="field">${esc(t('panel.iconColour'))} <input id="pTint" type="color" value="${esc(pic.tint)}"></label>` : ''}</div>`;
     }
+    // sections added by newer features (pictures, arranging, text …); early ones come before position and size
+    const ctx = { app: this.app, ed, items, editing: !!ed.editing, t, esc, panel: this };
+    const extra = SECTIONS.filter((s) => { try { return s.when(ctx); } catch (err) { console.error(err); return false; } });
+    const secHtml = (s) => { try { return `<div class="psec" data-sec="${s.id}">${s.html(ctx)}</div>`; } catch (err) { console.error(err); return ''; } };
+    for (const s of extra) if (s.early) html += secHtml(s);
     if (b && !ed.editing) {
       html += `<h2>${esc(t('panel.position'))}</h2>
       <div class="pgrid">
@@ -83,10 +88,7 @@ export class Panel {
         <button class="btn" data-act="duplicate">${esc(t('panel.duplicate'))}</button><button class="btn danger" data-act="delete">${esc(t('panel.delete'))}</button>
       </div>`;
     }
-    // sections added by newer features (pictures, arranging, text …)
-    const ctx = { app: this.app, ed, items, editing: !!ed.editing, t, esc, panel: this };
-    const extra = SECTIONS.filter((s) => { try { return s.when(ctx); } catch (err) { console.error(err); return false; } });
-    for (const s of extra) { try { html += `<div class="psec" data-sec="${s.id}">${s.html(ctx)}</div>`; } catch (err) { console.error(err); } }
+    for (const s of extra) if (!s.early) html += secHtml(s);
     this.el.innerHTML = html;
     this.el.hidden = false;
     this.wire(); this.refreshText();

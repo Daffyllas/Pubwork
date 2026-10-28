@@ -2,6 +2,7 @@
 // sostegno, e versioni più recenti di privacy e termini. {email}, {site} e {kofi} vengono da site.config.json.
 export default {
   slugs: {
+    compare: "confronto-editor-pub",
     edit: "modificare-file-pub",
     word: 'pub-in-word', batch: 'convertire-tanti-file-pub', alternative: 'alternativa-a-publisher',
     mac: 'aprire-file-pub-su-mac', chromebook: 'aprire-file-pub-su-chromebook', mobile: 'aprire-file-pub-su-iphone-ipad-android',
@@ -11,6 +12,7 @@ export default {
     'guide-labels': 'stampare-etichette-e-biglietti-da-visita', it: 'per-reparti-it', support: 'sostieni',
   },
   nav: {
+    compare: "Confronto editor .pub",
     edit: "Modificare file .pub",
     word: '.pub in Word', batch: 'Convertire tanti file', alternative: 'Alternativa a Publisher',
     mac: 'Su Mac', chromebook: 'Su Chromebook', mobile: 'Su telefono o tablet',
@@ -84,7 +86,7 @@ export default {
         'Microsoft ha dismesso Publisher a ottobre 2026 e al suo posto suggerisce Word, PowerPoint o Designer. Sono ottimi programmi, ma non aprono i file .pub e non sono fatti per impaginare. Pubwork sì: caselle di testo da mettere dove vuoi, testo che scorre da una casella all’altra, immagini, forme, tabelle e pagine.',
       ],
       steps: [
-        ['Apri un vecchio file o un modello', 'Trascina un file .pub, oppure scegli uno degli 89 modelli gratuiti.'],
+        ['Apri un vecchio file o un modello', 'Trascina un file .pub, oppure scegli uno degli oltre 90 modelli gratuiti.'],
         ['Modificalo come in Publisher', 'Fai doppio clic su un testo per scrivere. Trascina gli elementi per spostarli. Un clic cambia tutti i colori o i caratteri.'],
         ['Stampa o salva', 'Stampa libretti, etichette e più copie per foglio, oppure salva in PDF, Word o come immagini.'],
       ],
@@ -96,7 +98,7 @@ export default {
       faq: [
         ['Pubwork è davvero gratis?', 'Sì. Aprire, modificare, stampare e salvare è gratis, senza filigrana e senza limiti. Il sito può mostrare pubblicità nelle pagine informative, mai dentro l’editor.'],
         ['Posso salvare di nuovo in .pub?', 'No. Microsoft non ha mai reso pubblico come scrivere i file .pub. Pubwork li apre e salva nel proprio formato, oltre che in PDF, Word, LibreOffice Draw, JPG e PNG.'],
-        ['È potente come Publisher?', 'Per il lavoro di tutti i giorni (volantini, giornalini, menu, biglietti, etichette, libretti, stampa unione) fa quello per cui la maggior parte delle persone usava Publisher. Alcune funzioni speciali, come la modifica di WordArt e la separazione dei colori per le tipografie, non ci sono ancora.'],
+        ['È potente come Publisher?', 'Per il lavoro di tutti i giorni (volantini, giornalini, menu, biglietti, etichette, libretti, stampa unione) fa quello per cui la maggior parte delle persone usava Publisher. Ha anche WordArt, la separazione dei colori per le tipografie, gli stili, le pagine mastro e il controllo ortografico. Non può salvare di nuovo in .pub e mancano alcuni strumenti di Publisher poco usati, come le funzioni per le pagine web.'],
         ['Devo imparare qualcosa di nuovo?', 'Pochissimo. La pagina è al centro, le pagine a sinistra e a destra le opzioni per ciò su cui hai fatto clic, proprio come in Publisher.'],
         ['E Word, PowerPoint, Canva o Scribus?', 'Word e PowerPoint non aprono i file .pub e sono scomodi per impaginare. Canva richiede un account e non apre i file .pub. Scribus e LibreOffice Draw sono potenti ma più difficili da imparare. Pubwork è pensato per sembrare Publisher.'],
       ],
@@ -459,7 +461,7 @@ export default {
 
   // ---------------------------------------------------------------- note legali, versioni più recenti
   privacy: {
-    title: 'Privacy | Pubwork',
+    title: 'Informativa sulla privacy | Pubwork',
     desc: 'Come Pubwork tratta i tuoi file e la tua visita: i file si aprono sul tuo computer e non vengono mai caricati.',
     h1: 'Privacy',
     updated: 'Ultimo aggiornamento: {date}',
@@ -507,5 +509,173 @@ export default {
       ['h', 'Contatti'],
       ['p', '{email}'],
     ],
+  },
+  compare: {
+    "title": "Editor gratuiti per file .pub a confronto: Pubwork, stillPUB, LayoutSplat, LibreOffice | Pubwork",
+    "desc": "Un confronto onesto dei modi gratuiti per aprire e modificare i file di Microsoft Publisher (.pub) ora che Publisher è stato ritirato: editor nel browser, LibreOffice Draw e convertitori online.",
+    "h1": "Come aprire e modificare i file .pub: le soluzioni a confronto",
+    "updated": "Ultimo controllo: {date}",
+    "body": [
+      [
+        "p",
+        "Da quando Microsoft ha ritirato Publisher, diversi strumenti gratuiti aprono i file .pub. Ognuno è bravo in cose diverse. Questa tabella li confronta su ciò che serve alla maggior parte delle persone. Le informazioni sugli altri strumenti vengono dai loro siti e potrebbero essere cambiate dal nostro controllo."
+      ],
+      [
+        "table",
+        [
+          "",
+          "Pubwork",
+          "stillPUB",
+          "LayoutSplat",
+          "LibreOffice Draw",
+          "Convertitori online (Zamzar, Aspose…)"
+        ],
+        [
+          [
+            "Prezzo",
+            "Gratis",
+            "Gratis",
+            "Gratis",
+            "Gratis",
+            "Gratis, con limiti"
+          ],
+          [
+            "Installazione",
+            "Nessuna: funziona nel browser",
+            "Nessuna: funziona nel browser",
+            "Nessuna: funziona nel browser",
+            "Programma da installare",
+            "Nessuna: sito web"
+          ],
+          [
+            "Il tuo file viene caricato?",
+            "No, resta sul tuo dispositivo",
+            "No, resta sul tuo dispositivo",
+            "Non indicato",
+            "No, resta sul tuo computer",
+            "Sì, va sul loro server"
+          ],
+          [
+            "Apre i file .pub",
+            "Sì",
+            "Sì",
+            "Sì (consigliano di controllare ogni pagina)",
+            "Sì",
+            "Converte soltanto"
+          ],
+          [
+            "Modificare testo e immagini",
+            "Sì",
+            "Sì",
+            "Sì",
+            "Sì",
+            "No"
+          ],
+          [
+            "Telefoni e tablet",
+            "Sì (iPhone, iPad, Android)",
+            "Computer (Chrome, Edge, Firefox)",
+            "Non indicato",
+            "No (Windows, Mac, Linux)",
+            "Sì"
+          ],
+          [
+            "Lingue dell’interfaccia",
+            "6 (inglese, spagnolo, tedesco, francese, portoghese, italiano)",
+            "Inglese",
+            "Inglese",
+            "Più di 100",
+            "Molte"
+          ],
+          [
+            "Salva come",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, pagina web, e-mail, JPG, PNG",
+            "PDF, JPG, PNG",
+            "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
+            "PDF, formati LibreOffice, immagini",
+            "PDF, immagini e altri"
+          ],
+          [
+            "Modelli",
+            "Più di 90",
+            "8",
+            "123",
+            "Pochi per l’impaginazione",
+            "Nessuno"
+          ],
+          [
+            "Stampa unione",
+            "Sì, da CSV o Excel, con foto e un’e-mail per persona",
+            "Non indicato",
+            "Sì, da CSV, TSV o Excel",
+            "In Writer, non per impaginati .pub",
+            "No"
+          ],
+          [
+            "Stampare opuscoli, poster, etichette",
+            "Sì, tutti e tre, più biglietti piegati",
+            "Etichette (Avery 5160)",
+            "Etichette (29 fogli Avery)",
+            "A mano",
+            "No"
+          ],
+          [
+            "Convertire molti file insieme",
+            "Sì",
+            "Non indicato",
+            "Non indicato",
+            "Con strumenti da riga di comando",
+            "Dipende"
+          ],
+          [
+            "Funziona offline",
+            "Sì, dopo la prima visita",
+            "Sì, dopo la prima visita",
+            "Non indicato",
+            "Sì",
+            "No"
+          ],
+          [
+            "Open source",
+            "Sì (MPL 2.0)",
+            "Non indicato",
+            "Si può ospitare in proprio",
+            "Sì",
+            "No"
+          ],
+          [
+            "Salva di nuovo in .pub",
+            "No",
+            "No",
+            "No",
+            "No",
+            "No"
+          ]
+        ]
+      ],
+      [
+        "h",
+        "Quale scegliere?"
+      ],
+      [
+        "ul",
+        [
+          "Pubwork: se vuoi aprire, modificare, stampare e convertire file .pub in qualsiasi browser, anche su telefono o tablet, nella tua lingua, con stampa unione, opuscoli ed etichette.",
+          "LibreOffice Draw: se preferisci un programma installato sul computer, parte di una suite per ufficio gratuita e completa.",
+          "stillPUB: un editor semplice nel browser che può anche importare documenti Word e PDF.",
+          "LayoutSplat: se ti servono esportazioni professionali di impaginazione come IDML o Scribus.",
+          "Un convertitore online: se ti serve solo un PDF veloce e non ti dispiace caricare il file."
+        ]
+      ],
+      [
+        "tip",
+        "Nessuno strumento può salvare di nuovo in .pub, perché Microsoft non ha mai pubblicato come scrivere quel formato. Conserva i file .pub originali e salva la versione modificata in PDF, Word o nel file proprio dello strumento."
+      ],
+      [
+        "go",
+        "Apri un file .pub in Pubwork",
+        "home"
+      ]
+    ]
   },
 };

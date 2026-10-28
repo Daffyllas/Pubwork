@@ -1,8 +1,10 @@
 // Typing in text boxes. The box's own HTML is made editable, so the text stays exactly where it is on the
 // page; when typing ends, the HTML is read back into paragraphs and runs (pubmodel.js's shapes).
 import { cssFamily } from '../fonts.js';
+import { listLabels, setMarker, paraLook, stampPara, PP_KEYS } from '../render.js';
 
-const PARA_KEYS = ['align', 'spaceBefore', 'spaceAfter', 'indentLeft', 'indentRight', 'indentFirst', 'lineHeight', 'background', 'bullet', 'tabs', 'dropCap', 'style'];
+const PARA_KEYS = ['align', 'spaceBefore', 'spaceAfter', 'indentLeft', 'indentRight', 'indentFirst', 'lineHeight', 'background', 'bullet', 'num', 'numSuffix', 'numStart', 'tabs', 'dropCap', 'style'];
+
 const pt = (v) => { const n = parseFloat(v); if (!Number.isFinite(n)) return null; return String(v).endsWith('px') ? n * 0.75 : n; };
 const hex = (c) => {
   if (!c) return null;
@@ -56,7 +58,12 @@ export function readParas(container, base = []) {
     // tab stops, drop cap and style name are kept on the paragraph's element (they can change while typing)
     if (p.dataset) {
       const json = (v) => { try { return JSON.parse(v); } catch { return undefined; } };
-      if (p.tagName === 'P' && p.classList.contains('para')) { delete para.tabs; delete para.dropCap; delete para.style; }
+      if (p.tagName === 'P' && p.classList.contains('para')) {
+        delete para.tabs; delete para.dropCap; delete para.style;
+        for (const k of PP_KEYS) delete para[k];
+        const pp = json(p.dataset.pp || '{}') || {};
+        for (const k of PP_KEYS) if (pp[k] != null && pp[k] !== '') para[k] = pp[k];
+      }
       if (p.dataset.tabs) para.tabs = json(p.dataset.tabs);
       if (p.dataset.dropcap) para.dropCap = json(p.dataset.dropcap);
       if (p.dataset.style) para.style = p.dataset.style;
@@ -211,4 +218,89 @@ export function styleAtCaret(container) {
     bold: +cs.fontWeight >= 600, italic: cs.fontStyle === 'italic', underline: /underline/.test(cs.textDecorationLine),
     color: hex(cs.color), align: p ? getComputedStyle(p).textAlign.replace('start', 'left').replace('end', 'right') : 'left',
   };
+}
+
+// ------------------------------------------------------------------ lists and spacing while typing
+export const LIST_STEP = 18; // pt: how far one list level (or one "move right") goes in, as in Publisher
+const jsonOr = (v, d) => { try { return JSON.parse(v) ?? d; } catch { return d; } };
+// a drawn paragraph's spacing, indents and list settings
+export function ppOf(p) { return jsonOr(p?.dataset.pp || '{}', {}); }
+// change them (a null value takes the setting away) and show the change at once
+export function setParaProps(p, patch) {
+  const pa = { ...ppOf(p) };
+  for (const [k, v] of Object.entries(patch)) if (v == null || v === '') delete pa[k]; else pa[k] = v;
+  stampPara(p, pa);
+  paraLook(p, { ...pa, cont: p.classList.contains('cont') });
+  return pa;
+}
+// the look of a paragraph's first words, for its bullet or number
+function wordsLook(p) {
+  const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT, { acceptNode: (t) => (t.data.replace(/[​]/g, '') && !t.parentElement.closest('.bullet, .pw-gen') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT) });
+  let e = w.nextNode()?.parentElement;
+  if (!e) e = [...p.querySelectorAll('span')].find((s) => !s.closest('.bullet, .pw-gen, .tab')) || null; // an empty line keeps the style of the words it came from
+  if (!e || e === p) return null;
+  const cs = getComputedStyle(e);
+  return { fontFamily: cs.fontFamily, fontSize: `${+(parseFloat(cs.fontSize) * 0.75).toFixed(2)}pt`, color: cs.color };
+}
+// the words of a paragraph, without its bullet or number
+export function wordsOf(p) {
+  let s = ''; const w = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+  let n; while ((n = w.nextNode())) if (!n.parentElement.closest('.bullet, .pw-gen')) s += n.data;
+  return s.replace(/[​]/g, '');
+}
+// Count the bullets and numbers of the paragraphs being typed in again, after Enter, a deleted line or a
+// changed setting. before: the story's paragraphs shown in earlier linked boxes (they count on into this one).
+export function relist(container, before = []) {
+  const ps = [...container.querySelectorAll(':scope > p.para')];
+  const props = ps.map((p) => ({ ...ppOf(p), cont: p.classList.contains('cont') }));
+  // a line split from a list item that starts the numbers again: only the first of the two starts again
+  props.forEach((pa, i) => { if (i && pa.numStart && ps[i].dataset.pp === ps[i - 1].dataset.pp) { delete pa.numStart; setParaProps(ps[i], { numStart: null }); } });
+  const labels = listLabels([...before, ...props]).slice(before.length);
+  const sel = getSelection();
+  ps.forEach((p, i) => {
+    const lab = labels[i], pa = props[i], cur = [...p.querySelectorAll('.bullet')];
+    if (!lab || pa.cont) { cur.forEach((b) => b.remove()); return; }
+    let look = wordsLook(p);
+    if (!look && i && ps[i - 1].firstChild?.classList?.contains('bullet')) { const s = ps[i - 1].firstChild.style; look = { fontFamily: s.fontFamily, fontSize: s.fontSize, color: s.color }; }
+    const probe = setMarker(document.createElement('p'), lab.text, pa, look);
+    if (cur.length === 1 && p.firstChild === cur[0] && cur[0].outerHTML === probe.outerHTML) return;
+    setMarker(p, lab.text, pa, look);
+    // the caret goes after the number, never before it
+    const r = sel.rangeCount ? sel.getRangeAt(0) : null;
+    if (r && r.collapsed && r.startContainer === p && r.startOffset === 0) { const c = document.createRange(); c.setStart(p, 1); c.collapse(true); sel.removeAllRanges(); sel.addRange(c); }
+  });
+}
+// is the caret at the very start of the paragraph's words?
+function caretAtStart(p, r) {
+  const pre = document.createRange(); pre.setStart(p, 0);
+  try { pre.setEnd(r.startContainer, r.startOffset); } catch { return false; }
+  const frag = pre.cloneContents(); frag.querySelectorAll('.bullet').forEach((b) => b.remove());
+  return !frag.textContent.replace(/[​]/g, '');
+}
+// the list settings taken away; the words stay where they are (keepIndent) or go back to where the list starts
+export function unlistPatch(pa, keepIndent = false) {
+  const hang = pa.indentFirst < 0 ? -pa.indentFirst : 0;
+  return { bullet: null, num: null, numSuffix: null, numStart: null, indentFirst: hang ? null : pa.indentFirst, indentLeft: keepIndent ? pa.indentLeft : Math.max(0, (pa.indentLeft || 0) - hang) || null };
+}
+// Enter on an empty list item ends the list (or, deeper in, moves the item one level out);
+// Backspace at the start of an item's words takes its bullet or number away. True when handled.
+export function listInput(e, container) {
+  if (e.inputType !== 'insertParagraph' && e.inputType !== 'deleteContentBackward') return false;
+  if (e.isComposing) return false;
+  const sel = getSelection(); if (!sel.rangeCount || !sel.isCollapsed) return false;
+  const r = sel.getRangeAt(0), n = r.startContainer;
+  const p = (n.nodeType === 1 ? n : n.parentElement)?.closest('p.para');
+  if (!p || p.parentElement !== container) return false;
+  const pa = ppOf(p); if (!pa.bullet && !pa.num) return false;
+  if (e.inputType === 'insertParagraph') {
+    if (wordsOf(p).trim()) return false; // the browser makes the next item
+    const hang = pa.indentFirst < 0 ? -pa.indentFirst : 0;
+    if ((pa.indentLeft || 0) > hang + 0.5) setParaProps(p, { indentLeft: Math.max(hang, (pa.indentLeft || 0) - LIST_STEP) });
+    else setParaProps(p, unlistPatch(pa));
+  } else {
+    if (p.classList.contains('cont') || !caretAtStart(p, r)) return false;
+    setParaProps(p, unlistPatch(pa, true));
+  }
+  e.preventDefault();
+  return true;
 }

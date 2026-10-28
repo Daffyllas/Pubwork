@@ -4,6 +4,7 @@
 import { CROP_SHAPES, shapePoints, shapeIcon } from '../masks.js';
 import { schemeColors } from '../../templates/schemes.js';
 import { cssFilter } from '../../picfx.js';
+import { cutOf } from '../../piccut.js';
 import '../pics.css';
 
 const SLIDERS = [
@@ -11,7 +12,8 @@ const SLIDERS = [
   { key: 'contrast', min: -100, max: 100, get: (f) => f.contrast || 0, set: (v) => ({ contrast: v }) },
   { key: 'transparency', min: 0, max: 100, get: (f) => Math.round((1 - (f.opacity ?? 1)) * 100), set: (v) => ({ opacity: 1 - v / 100 }), unit: '%' },
 ];
-const DEFAULTS = { brightness: 0, contrast: 0, grey: false, sepia: false, washout: false, recolor: null, opacity: 1, flipH: false, flipV: false, radius: 0, shadow: false, crop: null };
+const DEFAULTS = { brightness: 0, contrast: 0, grey: false, sepia: false, washout: false, recolor: null, opacity: 1, flipH: false, flipV: false, radius: 0, shadow: false, crop: null, cut: null };
+const CROP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>';
 const EXTRA_COLOURS = ['#1d4e89', '#2d6a4f', '#8e1b4f', '#7a4b1f', '#555555'];
 
 // put a change into it.fx, leaving out settings that are back to normal
@@ -49,13 +51,20 @@ const picture = {
         <label class="field">${esc(t('panel.thickness'))} <input id="pfxLineW" type="number" min="0" max="50" step="0.5" value="${it.stroke ? Number(it.stroke.width) || 0 : 0}"> pt</label></div>
       <div class="prow wrap"><button class="btn" data-fxt="flipH" ${pressed(f.flipH)}>⇋ ${esc(t('pics.flipH'))}</button><button class="btn" data-fxt="flipV" ${pressed(f.flipV)}>⇵ ${esc(t('pics.flipV'))}</button></div>`;
     }
+    if (has) { // cutting the edges off (plain crop)
+      const on = app.editor?.cropping?.id === it.id, cut = !!cutOf(f);
+      h += `<h2>${esc(t('obj.cropTitle'))}</h2>
+      <div class="prow wrap pcrop"><button class="btn${on ? ' primary' : ''}" data-cropmode ${pressed(on)}${it.locked ? ' disabled' : ''}>${on ? '' : CROP_ICON}${esc(t(on ? 'obj.cropDone' : 'obj.crop'))}</button>
+        <button class="btn" data-cropreset${cut && !it.locked ? '' : ' disabled'}>${esc(t('obj.cropReset'))}</button></div>
+      <p class="hint">${esc(t(on ? 'obj.cropHintOn' : 'obj.cropHint'))}</p>`;
+    }
     h += `<h2>${esc(t('pics.cropTitle'))}</h2>
       <div class="pfx-shapes">${['none', ...CROP_SHAPES].map((s) => `<button data-crop="${s}" ${pressed(cropNow === s)} title="${esc(t('pics.crop.' + s))}" aria-label="${esc(t('pics.crop.' + s))}">${shapeIcon(s)}</button>`).join('')}</div>`;
     if (has) {
       h += `<label class="pfx-alt" for="pfxAlt">${esc(t('pics.alt'))}</label>
       <textarea id="pfxAlt" class="pfx-alt-in" rows="2" placeholder="${esc(t('pics.altPlaceholder'))}">${esc(it.alt || '')}</textarea>
       <p class="hint">${esc(t('pics.altHint'))}</p>
-      <div class="prow"><button class="btn" data-fxreset${it.fx || it.adjust || f.crop ? '' : ' disabled'}>${esc(t('pics.reset'))}</button></div>`;
+      <div class="prow"><button class="btn" data-fxreset${it.adjust || Object.keys(f).some((k) => k !== 'cut') ? '' : ' disabled'}>${esc(t('pics.reset'))}</button></div>`;
     }
     return h;
   },
@@ -98,8 +107,12 @@ const picture = {
     el.querySelector('#pfxAlt')?.addEventListener('change', (e) => apply((x) => { const v = e.target.value.trim(); if (v) x.alt = v; else delete x.alt; }, 'description'));
     el.querySelector('[data-fxreset]')?.addEventListener('click', () => apply((x) => {
       if (x.fx?.crop) delete x.points;
+      const cut = x.fx?.cut; // the cut edges stay (they have their own "Reset crop")
       delete x.fx; delete x.adjust;
+      if (cut) x.fx = { cut };
     }, 'reset picture'));
+    el.querySelector('[data-cropmode]')?.addEventListener('click', () => (ed.cropping ? ed.endCrop() : ed.startCrop(it.id)));
+    el.querySelector('[data-cropreset]')?.addEventListener('click', () => ed.resetCrop());
   },
 };
 

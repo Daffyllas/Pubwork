@@ -11,7 +11,8 @@
     "prebuild": "node tools/make-pdf-fonts.mjs && node tools/make-pages.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "test:reader": "node tools/reader-test.mjs"
+    "test:reader": "node tools/reader-test.mjs",
+    "postbuild": "node tools/make-sw.mjs"
   },
   "devDependencies": {
     "@iconify-json/fluent-emoji-flat": "^1.2.6",

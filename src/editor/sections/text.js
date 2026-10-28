@@ -3,7 +3,7 @@
 // wraps around pictures and shapes. While typing they change the selected words or paragraphs;
 // otherwise the whole of the selected text boxes.
 import './text.css';
-import { applyRunStyle, moreAtCaret, parasInRange } from '../text.js';
+import { applyRunStyle, moreAtCaret, parasInRange, ppOf, setParaProps, relist, listInput, unlistPatch, LIST_STEP } from '../text.js';
 import { paraExtras, layoutTabs, tabify, cleanLink, refreshDropCaps } from '../../render.js';
 
 const SPACINGS = [['tighter2', -1.5], ['tighter', -0.75], ['normal', 0], ['looser', 0.75], ['looser2', 1.5]];
@@ -46,7 +46,7 @@ function changeParas(ctx, label, fn) {
       const pa = { tabs: json(p.dataset.tabs) || [], dropCap: json(p.dataset.dropcap), style: p.dataset.style, cont: p.classList.contains('cont') };
       fn(pa, item);
       const span = p.querySelector('[data-font]'), size = span ? parseFloat(getComputedStyle(span).fontSize) * 0.75 : 10;
-      paraExtras(p, { ...pa, lineHeight: (item.paras[+p.dataset.pi] || {}).lineHeight }, size, span?.style.fontFamily || '');
+      paraExtras(p, { ...pa, lineHeight: ppOf(p).lineHeight }, size, span?.style.fontFamily || '');
     }
     refreshDropCaps(container); // sized from the words as they are now
     tabify(container); layoutTabs(box);
@@ -238,7 +238,165 @@ function wireWrap(el, ctx) {
   });
 }
 
+// ---------------------------------------------------------------- the part for lists and spacing
+// Bullets and numbering, moving paragraphs left and right, line spacing and the space before and after
+// paragraphs. While typing they change the paragraphs selected (or the one with the caret); otherwise every
+// paragraph of the selected text boxes (and tables).
+const BULLETS = [['dot', '•'], ['dash', '–'], ['check', '✓'], ['square', '■']];
+const NUMBERS = [['1', '1.'], ['a', 'a.'], ['i', 'i.']];
+const LINES = [['1', 'tl.l.single'], ['1.15', '1.15'], ['1.5', '1.5'], ['2', 'tl.l.double']];
+const last = { bullet: '•', num: '1' }; // the kind of bullet or numbers used last: Bullets and Numbering start with it
+const ICONS = {
+  bullet: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="5.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="10" r="1.4" fill="currentColor" stroke="none"/><circle cx="4" cy="14.5" r="1.4" fill="currentColor" stroke="none"/><path d="M8 5.5h9M8 10h9M8 14.5h9"/></svg>',
+  num: '<svg viewBox="0 0 20 20" aria-hidden="true"><text x="1.2" y="7.4" font-size="6" font-family="system-ui,sans-serif" font-weight="700" fill="currentColor" stroke="none">1</text><text x="1.2" y="12" font-size="6" font-family="system-ui,sans-serif" font-weight="700" fill="currentColor" stroke="none">2</text><text x="1.2" y="16.6" font-size="6" font-family="system-ui,sans-serif" font-weight="700" fill="currentColor" stroke="none">3</text><path d="M8 5.5h9M8 10h9M8 14.5h9"/></svg>',
+  outdent: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M9 8h8M9 12h8M3 16h14M6 7.5 3.2 10 6 12.5"/></svg>',
+  indent: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 4h14M9 8h8M9 12h8M3 16h14M3.2 7.5 6 10l-2.8 2.5"/></svg>',
+};
+// the paragraph lists of the picked things: text boxes, also inside groups, and the cells of tables
+const paraLists = (it) => (it.type === 'text' ? [it.paras] : it.type === 'table' ? it.rows.flatMap((r) => r.cells.filter((c) => !c.covered).map((c) => c.paras)) : []);
+const holders = (items) => { const out = []; const rec = (l) => l.forEach((it) => (it.type === 'group' ? rec(it.items) : (it.type === 'text' || it.type === 'table') && out.push(it))); rec(items); return out; };
+const hasWords = (pa) => pa.runs?.some((r) => r.text && r.text.trim());
+const isList = (pa) => !!(pa.bullet || pa.num);
+
+// the paragraph whose settings are shown
+function listNow(ctx) {
+  const { ed } = ctx;
+  if (ed.editing) { const p = parasInRange(ed.editing.container, ed.editing.range)[0]; return { ...ppOf(p), size: p ? parseFloat(getComputedStyle(p.querySelector('[data-font]') || p).fontSize) * 0.75 : 10 }; }
+  const all = holders(ctx.items).flatMap(paraLists).flat();
+  const pa = all.find(hasWords) || all[0] || {};
+  return { ...pa, size: pa.runs?.find((r) => r.size)?.size || 10 };
+}
+// a change to the picked paragraphs. fn(pa) -> the settings to change (null: take away); onlyWords: leave empty lines alone
+function changeLists(ctx, fn, onlyWords = false) {
+  const { ed } = ctx;
+  if (ed.editing) {
+    const { container, box, item } = ed.editing;
+    for (const p of parasInRange(container, ed.editing.range)) { if (p.classList.contains('cont')) continue; setParaProps(p, fn(ppOf(p))); }
+    afterTyping(ctx, container, box, item);
+    return;
+  }
+  ed.setProps((it) => {
+    const lists = paraLists(it); if (!lists.length) return;
+    for (const paras of lists) for (const pa of paras) {
+      if (onlyWords && !hasWords(pa)) continue;
+      for (const [k, v] of Object.entries(fn(pa))) if (v == null || v === '') delete pa[k]; else pa[k] = v;
+    }
+    if (it.type === 'text') it.edited = true; // spacing the person chose is never squeezed to fit
+  }, 'style');
+}
+// after a change while typing: numbers counted again, tabs laid out again, the change kept
+function afterTyping(ctx, container, box, item) {
+  const { ed } = ctx;
+  const first = container.querySelector(':scope > p.para');
+  relist(container, ed.editing?.cell ? [] : (item.paras || []).slice(0, first ? +first.dataset.pi || 0 : 0));
+  if (container.querySelector('span.tab')) layoutTabs(box);
+  refreshDropCaps(container);
+  ed.editing?.fitCheck?.(); ed.flushSoon(); ed.saveRange?.();
+  refreshList(ctx);
+}
+const listOn = (kind, value) => (pa) => {
+  const patch = kind === 'bullet' ? { bullet: value, num: null, numSuffix: null, numStart: null } : { num: value, bullet: null };
+  if (!isList(pa)) { patch.indentLeft = (pa.indentLeft || 0) + LIST_STEP; patch.indentFirst = -LIST_STEP; } // the words go in, the bullet hangs in front
+  return patch;
+};
+
+function listHtml(ctx) {
+  const { t, esc } = ctx;
+  return `<h2>${esc(t('tl.title'))}</h2>
+  <div class="prow seg tl-kinds"><button class="pbtn wide" data-list="bullet" aria-pressed="false">${ICONS.bullet}<span>${esc(t('tl.bullets'))}</span></button><button class="pbtn wide" data-list="num" aria-pressed="false">${ICONS.num}<span>${esc(t('tl.numbers'))}</span></button></div>
+  <div class="prow tl-row">
+    <div class="tl-chips" data-for="bullet" role="group" aria-label="${esc(t('tl.bulletStyle'))}" hidden>${BULLETS.map(([k, c]) => `<button class="pbtn" data-bullet="${esc(c)}" aria-pressed="false" aria-label="${esc(t('tl.b.' + k))}" title="${esc(t('tl.b.' + k))}">${esc(c)}</button>`).join('')}</div>
+    <div class="tl-chips" data-for="num" role="group" aria-label="${esc(t('tl.numberStyle'))}" hidden>${NUMBERS.map(([k, c]) => `<button class="pbtn" data-num="${k}" aria-pressed="false" aria-label="${esc(t('tl.n.' + k))}" title="${esc(t('tl.n.' + k))}">${esc(c)}</button>`).join('')}</div>
+    <span class="tl-push"></span>
+    <button class="pbtn" data-indent="-1" aria-label="${esc(t('tl.outdent'))}" title="${esc(t('tl.outdent'))}">${ICONS.outdent}</button><button class="pbtn" data-indent="1" aria-label="${esc(t('tl.indent'))}" title="${esc(t('tl.indent'))}">${ICONS.indent}</button>
+  </div>
+  ${ctx.editing ? `<p class="hint tl-endhint" hidden>${esc(t('tl.endHint'))}</p>` : ''}
+  <div class="prow"><label class="field tl-line">${esc(t('tl.line'))} <select id="tlLine">${LINES.map(([v, k]) => `<option value="${v}">${esc(k.startsWith('tl.') ? t(k) : k)}</option>`).join('')}<option value="cur" hidden></option><option value="exact">${esc(t('tl.l.exact'))}</option></select></label></div>
+  <div class="prow tl-exact" hidden><label class="field">${esc(t('tl.l.exactPt'))} <input id="tlLinePt" type="number" min="1" max="500" step="0.5"></label> pt</div>
+  <div class="pgrid tl-space"><label>${esc(t('tl.before'))}<input id="tlBefore" type="number" min="0" max="500" step="1"></label><label>${esc(t('tl.after'))}<input id="tlAfter" type="number" min="0" max="500" step="1"></label></div>`;
+}
+
+// show the settings of the paragraph at the caret (or of the picked boxes)
+function refreshList(ctx) {
+  const el = ctx.el; if (!el?.isConnected) return;
+  const pa = listNow(ctx), kind = pa.num ? 'num' : pa.bullet ? 'bullet' : null;
+  el.querySelectorAll('[data-list]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.list === kind)));
+  el.querySelectorAll('.tl-chips').forEach((g) => { g.hidden = g.dataset.for !== kind; });
+  el.querySelectorAll('[data-bullet]').forEach((b) => b.setAttribute('aria-pressed', String(kind === 'bullet' && b.dataset.bullet === pa.bullet)));
+  el.querySelectorAll('[data-num]').forEach((b) => b.setAttribute('aria-pressed', String(kind === 'num' && b.dataset.num === String(pa.num).toLowerCase())));
+  const hint = el.querySelector('.tl-endhint'); if (hint) hint.hidden = !kind;
+  const sel = el.querySelector('#tlLine'), exact = el.querySelector('.tl-exact'), lpt = el.querySelector('#tlLinePt');
+  if (document.activeElement !== sel && document.activeElement !== lpt) {
+    const lh = pa.lineHeight, cur = sel.querySelector('option[value="cur"]');
+    cur.hidden = true;
+    if (lh?.pt) { sel.value = 'exact'; lpt.value = +(+lh.pt).toFixed(2); }
+    else {
+      const m = lh?.mult ? +(+lh.mult).toFixed(2) : 1;
+      const hit = LINES.find(([v]) => Math.abs(+v - m) < 0.005);
+      if (hit) sel.value = hit[0]; else { cur.hidden = false; cur.textContent = String(m); sel.value = 'cur'; }
+      lpt.value = +(Math.round((m * 1.2 * (pa.size || 10)) * 2) / 2).toFixed(1);
+    }
+    exact.hidden = sel.value !== 'exact';
+  }
+  for (const [id, k] of [['#tlBefore', 'spaceBefore'], ['#tlAfter', 'spaceAfter']]) { const i = el.querySelector(id); if (i && document.activeElement !== i) i.value = +(+(pa[k] || 0)).toFixed(1); }
+}
+
+function wireList(el, ctx) {
+  ctx = { ...ctx, el };
+  const { ed } = ctx;
+  const $ = (s) => el.querySelector(s);
+  // right under the text settings (font, size, alignment), where people look for lists
+  const after = el.parentElement?.querySelector('[data-align]')?.closest('.prow');
+  const anchor = after?.nextElementSibling?.classList.contains('hint') ? after.nextElementSibling : after;
+  if (anchor && anchor.parentElement === el.parentElement) anchor.after(el);
+  el.querySelectorAll('button').forEach((b) => b.addEventListener('mousedown', (e) => { if (ed.editing) e.preventDefault(); })); // the caret stays in the text
+  refreshList(ctx);
+  // while typing: Enter on an empty item ends the list, Backspace at its start takes the bullet away,
+  // and the numbers follow every line added or taken away
+  const ec = ed.editing?.container;
+  if (ec && !ec.__tlInput) {
+    ec.__tlInput = true;
+    ec.addEventListener('beforeinput', (e) => {
+      const cur = ed.editing; if (!cur || cur.container !== ec) return;
+      if (listInput(e, ec)) afterTyping({ ...ctx, el: document.querySelector('#side [data-sec="text-lists"]') }, ec, cur.box, cur.item);
+    });
+    ec.addEventListener('input', () => {
+      const cur = ed.editing; if (!cur || cur.container !== ec) return;
+      if (!ec.querySelector(':scope > p.para[data-pp*="bullet"], :scope > p.para[data-pp*="num"], :scope > p.para > .bullet')) return;
+      const first = ec.querySelector(':scope > p.para');
+      relist(ec, cur.cell ? [] : (cur.item.paras || []).slice(0, first ? +first.dataset.pi || 0 : 0));
+    });
+  }
+  const onSel = () => { if (!el.isConnected) { document.removeEventListener('selectionchange', onSel); return; } if (ed.editing) refreshList(ctx); };
+  document.addEventListener('selectionchange', onSel);
+
+  el.querySelectorAll('[data-list]').forEach((b) => b.addEventListener('click', () => {
+    const kind = b.dataset.list, now = listNow(ctx);
+    const on = kind === 'num' ? !!now.num : !!now.bullet && !now.num;
+    if (on) changeLists(ctx, (pa) => (isList(pa) ? unlistPatch(pa) : {}));
+    else changeLists(ctx, listOn(kind, last[kind]), true);
+  }));
+  el.querySelectorAll('[data-bullet]').forEach((b) => b.addEventListener('click', () => { last.bullet = b.dataset.bullet; changeLists(ctx, listOn('bullet', last.bullet), true); }));
+  el.querySelectorAll('[data-num]').forEach((b) => b.addEventListener('click', () => { last.num = b.dataset.num; changeLists(ctx, listOn('num', last.num), true); }));
+  el.querySelectorAll('[data-indent]').forEach((b) => b.addEventListener('click', () => {
+    const d = +b.dataset.indent * LIST_STEP;
+    changeLists(ctx, (pa) => { const hang = pa.indentFirst < 0 ? -pa.indentFirst : 0; return { indentLeft: Math.round(Math.max(hang, (pa.indentLeft || 0) + d) * 100) / 100 || null }; });
+  }));
+  const setLine = (lh) => changeLists(ctx, () => ({ lineHeight: lh }));
+  $('#tlLine').addEventListener('change', (e) => {
+    const v = e.target.value;
+    if (v === 'exact') { $('.tl-exact').hidden = false; const n = parseFloat($('#tlLinePt').value); if (n > 0) setLine({ pt: n }); return; }
+    if (v === 'cur') return;
+    $('.tl-exact').hidden = true; setLine({ mult: +v });
+  });
+  $('#tlLinePt').addEventListener('change', (e) => { const n = parseFloat(e.target.value); if (n > 0) { $('#tlLine').value = 'exact'; setLine({ pt: Math.min(500, n) }); } });
+  for (const [id, k] of [['#tlBefore', 'spaceBefore'], ['#tlAfter', 'spaceAfter']]) {
+    $(id).addEventListener('change', (e) => { const n = parseFloat(e.target.value); if (n >= 0) changeLists(ctx, () => ({ [k]: Math.min(500, Math.round(n * 10) / 10) || null })); });
+  }
+}
+
 export default [
+  { id: 'text-lists', when: (ctx) => ctx.editing || holders(ctx.items).length > 0, html: listHtml, wire: wireList },
   { id: 'text-more', when: (ctx) => ctx.editing ? !ctx.ed.editing.cell : flatText(ctx.items).length > 0 && ctx.items.every((it) => it.type !== 'table'), html: textHtml, wire: wireText },
   { id: 'text-wrap', when: (ctx) => !ctx.editing && ctx.items.length > 0 && flatAll(ctx.items).every((it) => ['image', 'shape', 'text'].includes(it.type)), html: wrapHtml, wire: wireWrap },
 ];

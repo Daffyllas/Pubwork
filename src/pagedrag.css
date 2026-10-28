@@ -1,0 +1,10 @@
+/* Moving pages by dragging them in the page strip */
+#thumbs > .thumb{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#thumbs > .thumb.dragging{opacity:.4}
+body.pw-pagedrag,body.pw-pagedrag *{cursor:grabbing!important;user-select:none}
+.pw-dropline{position:fixed;height:3px;border-radius:3px;background:var(--accent);pointer-events:none;z-index:1002;box-shadow:0 0 0 2px var(--panel)}
+.pw-dropline::before,.pw-dropline::after{content:"";position:absolute;top:-3.5px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.pw-dropline::before{left:-5px}.pw-dropline::after{right:-5px}
+.mini.pw-dragghost{position:fixed;margin:0;pointer-events:none;z-index:1001;transform:translate(14px,-50%) rotate(-3deg);background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.3);border-radius:2px;overflow:hidden;opacity:.95}
+.mini.pw-dragghost .page{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:none;margin:0}
+.mini.pw-dragghost .pw-ui{display:none}

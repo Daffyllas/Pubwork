@@ -20,13 +20,13 @@ const TOOLS = {
   newsletter: { maker: 'news' }, calendar: { maker: 'calendar' }, labels: { maker: 'signs' },
 };
 // pages to read: guides and the small print
-const DOCS = ['retired', 'guide-merge', 'guide-booklet', 'guide-labels', 'it', 'support', 'privacy', 'terms'];
+const DOCS = ['retired', 'compare', 'guide-merge', 'guide-booklet', 'guide-labels', 'it', 'support', 'privacy', 'terms'];
 const KINDS = [...Object.keys(TOOLS), ...DOCS];
 const NO_ADS = new Set(['privacy', 'terms', 'support']);
 const GROUPS = {
   convert: ['home', 'edit', 'pdf', 'word', 'jpg', 'png', 'batch'],
   make: ['flyer', 'menu', 'invitation', 'certificate', 'newsletter', 'calendar', 'labels'],
-  help: ['retired', 'guide-merge', 'guide-booklet', 'guide-labels', 'alternative', 'mac', 'chromebook', 'mobile', 'it'],
+  help: ['retired', 'compare', 'guide-merge', 'guide-booklet', 'guide-labels', 'alternative', 'mac', 'chromebook', 'mobile', 'it'],
 };
 
 const imp = async (p) => (fs.existsSync(path.join(root, p)) ? (await import(pathToFileURL(path.join(root, p)).href)).default : {});
@@ -162,6 +162,7 @@ function docPage(l, kind) {
     if (t === 'h') return `<h2>${esc(x)}</h2>`;
     if (t === 'ol' || t === 'ul') return `<${t}>${x.map((i) => `<li>${esc(fill(i, v))}</li>`).join('')}</${t}>`;
     if (t === 'tip') return `<p class="tip">${esc(fill(x, v))}</p>`;
+    if (t === 'table') return `<div class="tablewrap" role="region" aria-label="${esc(d.h1)}" tabindex="0"><table class="cmp"><thead><tr>${x.map((h, i) => `<th scope="col"${i === 1 ? ' class="us"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${y.map((r) => `<tr><th scope="row">${esc(r[0])}</th>${r.slice(1).map((c, i) => `<td${i === 0 ? ' class="us"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     if (t === 'go') return `<p><a class="go" href="${rel(here, dirOf(l, y))}">${esc(x)}</a></p>`;
     if (t === 'source') return cfg.source ? `<p><a class="go" href="${esc(cfg.source)}" rel="noopener">${esc(x)}</a></p>` : '';
     if (t === 'kofi') return cfg.kofi ? `<p><a class="go" href="https://ko-fi.com/${esc(cfg.kofi)}" rel="noopener">${esc(x)}</a></p>` : '';
@@ -194,6 +195,13 @@ header{display:flex;align-items:center;justify-content:space-between;gap:10px;pa
 main{max-width:760px;margin:0 auto;padding-block:32px 48px;padding-inline:16px;display:flex;flex-direction:column;gap:32px}
 h1{font-size:clamp(28px,5vw,38px);line-height:1.15;margin:0;letter-spacing:-.015em;text-wrap:balance}
 .updated{color:var(--muted);margin:6px 0 0;font-size:14px}
+.tablewrap{overflow-x:auto;margin:6px 0 18px calc(50% - min(560px, 50vw - 16px));width:min(1120px, calc(100vw - 32px));border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.cmp{border-collapse:collapse;font-size:14px;line-height:1.45;min-width:760px;width:100%}
+.cmp th,.cmp td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.cmp thead th{font-size:14px;background:var(--bg)}
+.cmp tbody th{font-weight:600;position:sticky;left:0;background:var(--panel);min-width:150px}
+.cmp .us{background:var(--accent-soft);font-weight:600}
+.cmp tbody tr:last-child>*{border-bottom:0}
 .doc h2{font-size:20px;margin:28px 0 6px}
 .doc p,.doc li{max-width:65ch}
 .doc p{margin:0 0 10px}
@@ -242,6 +250,35 @@ ${LANGS.flatMap((l) => KINDS.map((kind) => `<url><loc>${urlOf(l, kind)}</loc><la
 </urlset>
 `;
 fs.writeFileSync(path.join(root, 'public/sitemap.xml'), sitemap);
+// a plain summary for AI assistants and search tools (llmstxt.org)
+{
+  const e = content.en, link = (k) => `- [${e.nav[k] || k}](${urlOf('en', k)})`;
+  fs.writeFileSync(path.join(root, 'public/llms.txt'), `# ${cfg.name}
+
+> ${cfg.name} is a free web app that opens, edits, prints and converts Microsoft Publisher (.pub) files in any browser, on Windows, Mac, Linux, Chromebook, iPhone, iPad and Android. Files are read inside the browser and never uploaded. No account, no watermark, no limits. Open source (MPL 2.0)${cfg.source ? `: ${cfg.source}` : ''}.
+
+Microsoft retired Publisher in October 2026; ${cfg.name} lets people keep using their .pub newsletters, flyers, menus, cards and brochures.
+
+## What it does
+- Opens .pub files from Publisher 97 to Microsoft 365, with text, pictures, shapes, tables, WordArt and linked text boxes
+- Edits text, fonts, colours, pictures, tables and layout; lists, styles, master pages, spell check, undo
+- Saves as PDF (searchable, embedded fonts, print-ready CMYK with bleed and crop marks), Word (.docx), PowerPoint (.pptx), LibreOffice Draw (.odg), XPS, web page, e-mail, JPG and PNG
+- Prints booklets, posters over several sheets, folded cards, labels and business cards
+- More than 90 templates (flyers, menus, newsletters, invitations, certificates, calendars, labels)
+- Mail merge from CSV or Excel, with a photo per copy, catalogues and one e-mail per person
+- Converts many .pub files at once
+- Works offline after the first visit
+- Interface in English, Spanish, German, French, Portuguese and Italian
+- Cannot save back to .pub (no tool can); keeps your original file unchanged
+
+## Pages
+- [Open and edit .pub files](${cfg.url}/)
+${['edit', 'pdf', 'word', 'jpg', 'png', 'batch', 'compare', 'retired', 'alternative', 'mobile', 'mac', 'chromebook', 'guide-merge', 'guide-booklet', 'guide-labels', 'it', 'privacy'].map(link).join('\n')}
+
+## Other languages
+${LANGS.filter((x) => x !== 'en').map((x) => `- ${words[x]['lang.name']}: ${urlOf(x, 'home')}`).join('\n')}
+`);
+}
 fs.writeFileSync(path.join(root, 'public/robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${cfg.url}/sitemap.xml\n`);
 // a page for addresses that don't exist, in English with links to every language's home
 fs.writeFileSync(path.join(root, 'public/404.html'), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found | ${esc(cfg.name)}</title><meta name="robots" content="noindex"><style>body{margin:0;font:17px/1.6 system-ui,sans-serif;background:#f6f2ee;color:#221d1a;display:grid;place-items:center;min-height:100vh;padding:16px}main{max-width:520px}a{color:#bf4e19;font-weight:700}@media (prefers-color-scheme:dark){body{background:#1a1614;color:#ece7e3}a{color:#f0874d}}</style></head><body><main><h1>Page not found</h1><p>This page doesn’t exist, but ${esc(cfg.name)} does: <a href="/">open your Publisher files here</a>.</p><p>${LANGS.filter((l) => l !== 'en').map((l) => `<a href="/${l}/" lang="${l}">${esc(words[l]['lang.name'])}</a>`).join(' · ')}</p></main></body></html>\n`);

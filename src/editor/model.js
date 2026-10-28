@@ -74,6 +74,81 @@ export function resizeItem(it, from, to) {
   if (k > 0 && k !== 1) charts(it);
 }
 
+// ------------------------------------------------------------------ turned items
+// it.rotate: degrees the item is turned to the LEFT (anticlockwise) around its middle; the page shows
+// rotate(-it.rotate). A group's own `rotate` is only the turn of its frame (its items carry their own turns).
+const RAD = Math.PI / 180;
+export const normAngle = (a) => { let r = (((+a || 0) % 360) + 360) % 360; if (r > 180) r -= 360; r = Math.round(r * 100) / 100; return r === -180 ? 180 : Math.abs(r) < 0.005 ? 0 : r; };
+// the page directions of an item's own x and y axes (y points down the page)
+export function axes(a) { const t = -(a || 0) * RAD, c = Math.cos(t), s = Math.sin(t); return [[c, s], [-s, c]]; }
+export function leaves(it, out = []) { if (it.type === 'group') it.items.forEach((c) => leaves(c, out)); else out.push(it); return out; }
+// the turn of a picked thing: its own; a group's frame turn (or the turn all its items share)
+export function angleOf(it) {
+  if (it.type !== 'group') return normAngle(it.rotate || 0);
+  if (Number.isFinite(it.rotate)) return normAngle(it.rotate);
+  const all = leaves(it).map((x) => normAngle(x.rotate || 0));
+  return all.length && all.every((a) => Math.abs(a - all[0]) < 0.01) ? all[0] : 0;
+}
+// the four corners of an item as drawn
+function corners(it) {
+  const b = bounds(it), cx = b.x + b.w / 2, cy = b.y + b.h / 2, [ex, ey] = axes(it.rotate || 0);
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => [cx + (i * b.w / 2) * ex[0] + (j * b.h / 2) * ey[0], cy + (i * b.w / 2) * ex[1] + (j * b.h / 2) * ey[1]]);
+}
+// The frame around picked things: { cx, cy, w, h, a } (middle, size and turn). One thing: its own box, turned
+// with it. Several: upright, around all of them as drawn.
+export function frameOf(items) {
+  if (!items.length) return null;
+  const a = items.length === 1 ? angleOf(items[0]) : 0, [ex, ey] = axes(a);
+  let u0 = Infinity, v0 = Infinity, u1 = -Infinity, v1 = -Infinity;
+  for (const it of items) for (const x of leaves(it)) for (const [px, py] of corners(x)) {
+    const u = px * ex[0] + py * ex[1], v = px * ey[0] + py * ey[1];
+    u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v);
+  }
+  if (!Number.isFinite(u0)) return null;
+  const cu = (u0 + u1) / 2, cv = (v0 + v1) / 2;
+  return { cx: cu * ex[0] + cv * ey[0], cy: cu * ex[1] + cv * ey[1], w: u1 - u0, h: v1 - v0, a };
+}
+// a point on the page <-> the same point in the frame's own axes (from its middle)
+export function toLocal(f, [x, y]) { const [ex, ey] = axes(f.a), dx = x - f.cx, dy = y - f.cy; return [dx * ex[0] + dy * ex[1], dx * ey[0] + dy * ey[1]]; }
+export function toPage(f, [u, v]) { const [ex, ey] = axes(f.a); return [f.cx + u * ex[0] + v * ey[0], f.cy + u * ex[1] + v * ey[1]]; }
+// the upright box around a frame (or around an item as drawn)
+export function frameBox(f) {
+  const [ex, ey] = axes(f.a), hw = (Math.abs(ex[0]) * f.w + Math.abs(ey[0]) * f.h) / 2, hh = (Math.abs(ex[1]) * f.w + Math.abs(ey[1]) * f.h) / 2;
+  return { x: f.cx - hw, y: f.cy - hh, w: 2 * hw, h: 2 * hh };
+}
+export const drawnBounds = (it) => frameBox(frameOf([it]) || { cx: 0, cy: 0, w: 0, h: 0, a: 0 });
+export const isTurned = (items) => items.some((it) => (it.type === 'group' && it.rotate) || leaves(it).some((x) => normAngle(x.rotate || 0)));
+
+// turn items by deg (to the left) around the point (cx, cy)
+export function turnItems(items, deg, cx, cy) {
+  if (!deg) return;
+  const t = -deg * RAD, c = Math.cos(t), s = Math.sin(t);
+  const turn = (it) => {
+    if (it.type === 'group') { const a = normAngle(angleOf(it) + deg); it.items.forEach(turn); if (a) it.rotate = a; else delete it.rotate; return; }
+    const b = bounds(it), mx = b.x + b.w / 2, my = b.y + b.h / 2, dx = mx - cx, dy = my - cy;
+    moveItem(it, cx + dx * c - dy * s - mx, cy + dx * s + dy * c - my);
+    const r = normAngle((it.rotate || 0) + deg);
+    if (r) it.rotate = r; else delete it.rotate;
+  };
+  items.forEach(turn);
+}
+// Resize items from frame f0 to frame f1 (same turn): along the frame's own axes. Items turned like the frame
+// (or by a quarter) keep their shape exactly; others keep their turn and get the nearest size.
+export function resizeInFrame(it, f0, f1) {
+  const sx = f0.w ? f1.w / f0.w : 1, sy = f0.h ? f1.h / f0.h : 1;
+  const one = (x) => {
+    if (x.type === 'group') { x.items.forEach(one); return; }
+    const b = bounds(x), [u, v] = toLocal(f0, [b.x + b.w / 2, b.y + b.h / 2]), [nx, ny] = toPage(f1, [u * sx, v * sy]);
+    const rel = ((x.rotate || 0) - f0.a) * RAD, cs = Math.abs(Math.cos(rel)), sn = Math.abs(Math.sin(rel));
+    const kx = Math.hypot(sx * cs, sy * sn), ky = Math.hypot(sx * sn, sy * cs), nw = b.w * kx, nh = b.h * ky;
+    resizeItem(x, b, { x: nx - nw / 2, y: ny - nh / 2, w: nw, h: nh });
+  };
+  one(it);
+  const k = Math.min(Math.abs(sx), Math.abs(sy)); // a chart's words follow, as in resizeItem
+  const charts = (x) => { if (x.type !== 'group') return; if (x.chart) scaleStyle(x, k); else x.items.forEach(charts); };
+  if (it.type === 'group' && k > 0 && k !== 1) charts(it);
+}
+
 // give an item (and everything in it) fresh ids, e.g. after copying. Used as list.forEach(reId) or
 // list.map(reId): linked text boxes copied together stay linked to each other (a new chain, same order);
 // a box copied without the rest of its chain becomes an ordinary box holding the whole story.

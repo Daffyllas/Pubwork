@@ -1,5 +1,6 @@
 // The "Line up" settings for whatever is picked: line up, spread out, turn, flip, group, lock.
-import { group, ungroup, align, distribute, flip, rotate, toggleLock } from '../arrange.js';
+import { group, ungroup, align, distribute, flip, rotate, setAngle, toggleLock } from '../arrange.js';
+import { angleOf } from '../model.js';
 import '../pics.css';
 
 const S = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -50,9 +51,15 @@ const arrange = {
     h += `<div class="prow seg">${['left', 'center', 'right'].map((k) => `<button class="pbtn" data-al="${k}" data-arr="align" title="${esc(t('pics.align.' + k))}" aria-label="${esc(t('pics.align.' + k))}"${locked ? ' disabled' : ''}>${ICON[k]}</button>`).join('')}
       ${['top', 'middle', 'bottom'].map((k) => `<button class="pbtn" data-al="${k}" data-arr="align" title="${esc(t('pics.align.' + k))}" aria-label="${esc(t('pics.align.' + k))}"${locked ? ' disabled' : ''}>${ICON[k]}</button>`).join('')}</div>
       <p class="hint">${esc(t(n === 1 ? 'pics.alignPage' : 'pics.alignEach'))}</p>`;
+    if (!locked) { // turning: a quarter at a time, or to an exact angle (shown clockwise, like other programs)
+      const cw = items.map((it) => Math.round(((-angleOf(it) % 360) + 360) % 360 * 10) / 10 % 360);
+      const same = cw.every((v) => Math.abs(v - cw[0]) < 0.05);
+      h += `<div class="prow wrap parr-turn">${btn('turnL', 'pics.turnL', 'turnL')}${btn('turnR', 'pics.turnR', 'turnR')}
+        <label class="field parr-angle" title="${esc(t('obj.angleHint'))}">${esc(t('obj.angle'))} <input id="arrAngle" type="number" inputmode="decimal" min="-360" max="360" step="1" value="${same ? cw[0] : ''}"${same ? '' : ' placeholder="–"'}> °</label></div>
+      <p class="hint">${esc(t('obj.turnHint'))}</p>`;
+    }
     h += '<div class="prow wrap">';
     if (n >= 3) h += btn('spreadH', 'pics.spreadH', 'spreadH') + btn('spreadV', 'pics.spreadV', 'spreadV');
-    if (!locked) h += btn('turnL', 'pics.turnL', 'turnL') + btn('turnR', 'pics.turnR', 'turnR');
     if (!locked && flippable && !onePic) h += btn('flipH', 'pics.flipH', 'flipH') + btn('flipV', 'pics.flipV', 'flipV');
     if (n >= 2) h += btn('group', 'pics.group', 'group');
     if (items.some((it) => it.type === 'group')) h += btn('ungroup', 'pics.ungroup', 'ungroup');
@@ -69,6 +76,9 @@ const arrange = {
       chart: async () => (await import('../chart.js')).openChart(app, items[0]),
     };
     el.querySelectorAll('[data-arr]').forEach((b) => b.addEventListener('click', () => go[b.dataset.arr]?.(b)));
+    const ang = el.querySelector('#arrAngle');
+    ang?.addEventListener('change', () => { const v = parseFloat(String(ang.value).replace(',', '.')); if (Number.isFinite(v)) setAngle(app, -v); });
+    ang?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); ang.blur(); } });
     // a padlock on the selection frame of things that can't be moved (the frame is drawn again often, so watch for it)
     watchSelection(app);
     lockBadge(app, ed.pageEl?.querySelector('.pw-ui.sel'));

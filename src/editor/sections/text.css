@@ -23,3 +23,17 @@
 .panel.styles-panel .st-prev{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;max-height:40px}
 .panel.styles-panel .st-new{display:flex;gap:6px}
 .panel.styles-panel .st-new input{flex:1;min-width:0}
+/* lists and spacing */
+#side .tl-kinds .pbtn{grid-auto-flow:column;gap:6px;flex:1;justify-content:center;color:var(--ink)}
+#side .tl-kinds .pbtn[aria-pressed="true"]{color:var(--accent)}
+#side .tl-row{gap:6px}
+#side .tl-chips{display:flex;gap:4px}
+#side .tl-chips[hidden]{display:none}
+#side .tl-chips .pbtn{font-size:15px;color:var(--ink);font-family:"Segoe UI Symbol","DejaVu Sans",system-ui,sans-serif}
+#side .tl-chips .pbtn[aria-pressed="true"]{color:var(--accent)}
+#side .tl-push{flex:1}
+#side .tl-row > .pbtn{color:var(--ink)}
+#side .tl-line{flex:1}
+#side .tl-line select{flex:1;min-width:0}
+#side .tl-space{margin:8px 0 4px}
+#side .tl-space input{width:100%;box-sizing:border-box}

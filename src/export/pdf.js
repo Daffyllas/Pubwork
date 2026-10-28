@@ -344,7 +344,9 @@ class PageWriter {
     if (w <= 0 || h <= 0) return;
     const y = this.h - top - h;
     const m = /^data:image\/(png|jpeg);base64,/.exec(img.src);
-    const plain = m && !img.style.filter && !box.style.clipPath;
+    // a picture with cut edges whose cut copy could not be made: the whole picture, placed so the right part shows
+    const part = img.style.position === 'absolute' ? { l: parseFloat(img.style.left) / 100 || 0, t: parseFloat(img.style.top) / 100 || 0, w: parseFloat(img.style.width) / 100 || 1, h: parseFloat(img.style.height) / 100 || 1, k: /scale\((-?[\d.]+),\s*(-?[\d.]+)\)/.exec(img.style.transform || '') } : null;
+    const plain = m && !img.style.filter && !box.style.clipPath && !part;
     let image;
     if (plain) {
       image = await this.embedImage(Uint8Array.from(atob(img.src.slice(m[0].length)), (ch) => ch.charCodeAt(0)), m[1] === 'png' ? 'png' : 'jpg');
@@ -356,7 +358,11 @@ class PageWriter {
       const bytes = await this.rasterToPng(async (ctx, cw, ch) => {
         if (poly) { ctx.beginPath(); poly.forEach(([px, py], i) => (i ? ctx.lineTo(px * cw, py * ch) : ctx.moveTo(px * cw, py * ch))); ctx.closePath(); ctx.clip(); }
         if (img.style.filter) ctx.filter = img.style.filter;
-        ctx.drawImage(img, 0, 0, cw, ch);
+        if (part) { // (turned over around its own middle, like the CSS)
+          ctx.translate((part.l + part.w / 2) * cw, (part.t + part.h / 2) * ch);
+          if (part.k) ctx.scale(+part.k[1], +part.k[2]);
+          ctx.drawImage(img, (-part.w / 2) * cw, (-part.h / 2) * ch, part.w * cw, part.h * ch);
+        } else ctx.drawImage(img, 0, 0, cw, ch);
       }, w, h, dpi);
       image = await this.embedImage(bytes, 'png');
     }

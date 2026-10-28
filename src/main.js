@@ -17,6 +17,7 @@ import { findItem } from './editor/model.js';
 import { snapLines, drawGuides, openGuides, sideHtml as guidesSide, wireSide as wireGuidesSide, renderPanel as renderGuidesPanel } from './layoutguides.js';
 import { openMasters, nameMasters, sideHtml as mastersSide, wireSide as wireMastersSide, renderPanel as renderMastersPanel } from './masters.js';
 import { startTour, addTourLink, offerTour } from './tour.js';
+import { wireThumbs, dragging as draggingPage } from './pagedrag.js';
 import './mastersguides.css';
 import { clone, uid, reId, blankDocument, PAGE_SIZES, transformItem, scaleStyle, History } from './editor/model.js';
 import { toPubwork, fromPubwork, isZip, keepLocally, listLocal, loadLocal, forgetLocal, trimLocal } from './editor/file.js';
@@ -112,6 +113,8 @@ class App {
       if (mod && e.key === '0') { e.preventDefault(); this.fit(); }
     });
     window.addEventListener('resize', () => { if (this.autoFit) this.fit(); });
+    // offline use after the first visit (not inside a claude.ai artifact, which has its own address)
+    if ('serviceWorker' in navigator && !window.claude && location.protocol !== 'file:') navigator.serviceWorker.register(new URL('sw.js', ROOT)).catch(() => {});
     if ('launchQueue' in window) window.launchQueue.setConsumer(async (p) => { const h = p.files?.[0]; if (h) this.openFile(await h.getFile()); });
     // fonts that arrive late change how text fits: measure again once they are in
     document.fonts.addEventListener?.('loadingdone', () => { if (!this.doc || this.saving || this.editor.editing) return; clearTimeout(this._refl); this._refl = setTimeout(() => this.settle(), 150); });
@@ -515,6 +518,9 @@ class App {
   }
   renderThumbs() {
     const box = $('thumbs'); if (!this.doc) return;
+    if (draggingPage()) { this._thumbsWaiting = true; return; } // drawn again once the page is let go
+    // the keyboard stays on the same page picture (or on the page just moved)
+    const had = [...box.querySelectorAll(':scope > .thumb')].indexOf(document.activeElement), focusAt = this._thumbFocus ?? had; this._thumbFocus = null;
     box.textContent = '';
     const many = this.doc.pages.length > 1;
     if (this.masterMode) { nameMasters(this.doc.pages); this.updateModeBar(); }
@@ -541,6 +547,9 @@ class App {
     });
     const add = document.createElement('button'); add.className = 'addpage'; add.textContent = `+ ${t(this.masterMode ? 'masters.new' : 'page.add')}`;
     add.onclick = () => this.addPage(); box.appendChild(add);
+    wireThumbs(this, box); // drag a page to move it; Alt+Up / Alt+Down
+    const f = focusAt >= 0 ? box.querySelectorAll(':scope > .thumb')[focusAt] : null;
+    if (f) { f.focus({ preventScroll: true }); f.scrollIntoView({ block: 'nearest' }); }
   }
   setZoom(z, auto = false) {
     this.zoom = Math.min(8, Math.max(0.1, z)); this.autoFit = auto;
@@ -905,7 +914,14 @@ class App {
     this.pageChange(() => this.doc.pages.splice(i + 1, 0, copy), i + 1);
   }
   deletePage(i) { if (this.doc.pages.length > 1) this.pageChange(() => this.doc.pages.splice(i, 1), i - 1 < 0 ? 0 : i - 1); }
-  movePage(i, d) { const j = i + d; if (j < 0 || j >= this.doc.pages.length) return; this.pageChange(() => { const p = this.doc.pages; [p[i], p[j]] = [p[j], p[i]]; }, j); }
+  movePage(i, d) { this.movePageTo(i, i + d); }
+  // move page i so it becomes page j (one undo step); master pages, linked boxes and page numbers follow the page
+  movePageTo(i, j, { keyboard = false } = {}) {
+    const n = this.doc.pages.length; if (i < 0 || i >= n || j < 0 || j >= n || i === j) return;
+    if (keyboard) this._thumbFocus = j;
+    this.pageChange(() => { const p = this.doc.pages; p.splice(j, 0, p.splice(i, 1)[0]); }, j);
+    if (this.editor.live) this.editor.live.textContent = t('thumb.moved', { n: j + 1 });
+  }
 
   // ---------------------------------------------------------------- keeping work
   touched() { this.dirty = true; this.setTitle(); clearTimeout(this._keepT); this._keepT = setTimeout(() => this.keepNow(), 1500); }

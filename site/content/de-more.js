@@ -2,6 +2,7 @@
 // Unterstützung sowie neuere Fassungen von Datenschutz und Nutzungsbedingungen. {email}, {site} und {kofi} kommen aus site.config.json.
 export default {
   slugs: {
+    compare: "pub-editoren-vergleich",
     edit: "pub-dateien-bearbeiten",
     word: 'pub-in-word', batch: 'viele-pub-dateien-umwandeln', alternative: 'publisher-alternative',
     mac: 'pub-dateien-auf-dem-mac-oeffnen', chromebook: 'pub-dateien-auf-chromebook-oeffnen', mobile: 'pub-dateien-auf-iphone-ipad-android-oeffnen',
@@ -11,6 +12,7 @@ export default {
     'guide-labels': 'etiketten-und-visitenkarten-drucken', it: 'fuer-it-teams', support: 'unterstuetzen',
   },
   nav: {
+    compare: ".pub-Editoren im Vergleich",
     edit: ".pub-Dateien bearbeiten",
     word: '.pub in Word', batch: 'Viele Dateien umwandeln', alternative: 'Publisher-Alternative',
     mac: 'Auf dem Mac', chromebook: 'Auf dem Chromebook', mobile: 'Auf Handy oder Tablet',
@@ -84,7 +86,7 @@ export default {
         'Microsoft hat Publisher im Oktober 2026 eingestellt und empfiehlt stattdessen Word, PowerPoint oder Designer. Das sind gute Programme, aber sie öffnen keine .pub-Dateien und sind nicht dafür gemacht, eine Seite zu gestalten. Pubwork schon: Textfelder, die Sie überall hinsetzen, Text, der von einem Feld ins nächste fließt, Bilder, Formen, Tabellen und Seiten.',
       ],
       steps: [
-        ['Alte Datei oder Vorlage öffnen', 'Ziehen Sie eine .pub-Datei hinein oder wählen Sie eine von 89 kostenlosen Vorlagen.'],
+        ['Alte Datei oder Vorlage öffnen', 'Ziehen Sie eine .pub-Datei hinein oder wählen Sie eine von über 90 kostenlosen Vorlagen.'],
         ['Ändern wie in Publisher', 'Doppelklicken Sie auf Text, um zu schreiben. Ziehen Sie Dinge, um sie zu verschieben. Ein Klick ändert alle Farben oder Schriften.'],
         ['Drucken oder speichern', 'Drucken Sie Broschüren, Etiketten und mehrere Kopien pro Blatt, oder speichern Sie als PDF, Word oder Bild.'],
       ],
@@ -96,7 +98,7 @@ export default {
       faq: [
         ['Ist Pubwork wirklich kostenlos?', 'Ja. Öffnen, Bearbeiten, Drucken und Speichern sind kostenlos, ohne Wasserzeichen und ohne Begrenzung. Auf den Infoseiten der Website kann Werbung erscheinen, im Editor selbst nie.'],
         ['Kann ich wieder als .pub speichern?', 'Nein. Microsoft hat nie veröffentlicht, wie man .pub-Dateien schreibt. Pubwork öffnet sie und speichert in einer eigenen Pubwork-Datei sowie als PDF, Word, LibreOffice Draw, JPG und PNG.'],
-        ['Kann es so viel wie Publisher?', 'Für die alltägliche Arbeit (Flyer, Newsletter, Speisekarten, Karten, Etiketten, Broschüren, Serienbriefe) kann es das, wofür die meisten Menschen Publisher genutzt haben. Einige Spezialfunktionen, etwa das Bearbeiten von WordArt oder Farbauszüge für Druckereien, gibt es noch nicht.'],
+        ['Kann es so viel wie Publisher?', 'Für die alltägliche Arbeit (Flyer, Newsletter, Speisekarten, Karten, Etiketten, Broschüren, Serienbriefe) kann es das, wofür die meisten Menschen Publisher genutzt haben. Es bietet auch WordArt, Farbauszüge für Druckereien, Formatvorlagen, Masterseiten und Rechtschreibprüfung. Zurück als .pub speichern kann es nicht, und einige selten genutzte Publisher-Werkzeuge, etwa für Webseiten, fehlen.'],
         ['Muss ich etwas Neues lernen?', 'Sehr wenig. Die Seite ist in der Mitte, die Seitenübersicht links und die Einstellungen für das, was Sie angeklickt haben, rechts, genau wie in Publisher.'],
         ['Und Word, PowerPoint, Canva oder Scribus?', 'Word und PowerPoint öffnen keine .pub-Dateien und sind für Layouts umständlich. Canva braucht ein Konto und öffnet keine .pub-Dateien. Scribus und LibreOffice Draw können viel, sind aber schwerer zu lernen. Pubwork soll sich anfühlen wie Publisher.'],
       ],
@@ -507,5 +509,173 @@ export default {
       ['h', 'Kontakt'],
       ['p', '{email}'],
     ],
+  },
+  compare: {
+    "title": "Kostenlose Editoren für .pub-Dateien im Vergleich: Pubwork, stillPUB, LayoutSplat, LibreOffice | Pubwork",
+    "desc": "Ein ehrlicher Vergleich der kostenlosen Wege, Microsoft-Publisher-Dateien (.pub) zu öffnen und zu bearbeiten, seit Publisher eingestellt ist: Browser-Editoren, LibreOffice Draw und Online-Konverter.",
+    "h1": "Wege, .pub-Dateien zu öffnen und zu bearbeiten, im Vergleich",
+    "updated": "Zuletzt geprüft: {date}",
+    "body": [
+      [
+        "p",
+        "Seit Microsoft Publisher eingestellt hat, öffnen mehrere kostenlose Programme .pub-Dateien. Jedes ist in anderen Dingen gut. Diese Tabelle vergleicht sie bei dem, was die meisten brauchen. Die Angaben zu den anderen Programmen stammen von deren eigenen Websites und können sich seit unserer Prüfung geändert haben."
+      ],
+      [
+        "table",
+        [
+          "",
+          "Pubwork",
+          "stillPUB",
+          "LayoutSplat",
+          "LibreOffice Draw",
+          "Online-Konverter (Zamzar, Aspose…)"
+        ],
+        [
+          [
+            "Preis",
+            "Kostenlos",
+            "Kostenlos",
+            "Kostenlos",
+            "Kostenlos",
+            "Kostenlos, mit Grenzen"
+          ],
+          [
+            "Installation",
+            "Keine: läuft im Browser",
+            "Keine: läuft im Browser",
+            "Keine: läuft im Browser",
+            "Programm zum Installieren",
+            "Keine: Website"
+          ],
+          [
+            "Wird Ihre Datei hochgeladen?",
+            "Nein, sie bleibt auf Ihrem Gerät",
+            "Nein, sie bleibt auf Ihrem Gerät",
+            "Nicht angegeben",
+            "Nein, sie bleibt auf Ihrem Computer",
+            "Ja, sie geht an deren Server"
+          ],
+          [
+            "Öffnet .pub-Dateien",
+            "Ja",
+            "Ja",
+            "Ja (man soll jede Seite prüfen)",
+            "Ja",
+            "Wandelt nur um"
+          ],
+          [
+            "Text und Bilder bearbeiten",
+            "Ja",
+            "Ja",
+            "Ja",
+            "Ja",
+            "Nein"
+          ],
+          [
+            "Handys und Tablets",
+            "Ja (iPhone, iPad, Android)",
+            "Computer (Chrome, Edge, Firefox)",
+            "Nicht angegeben",
+            "Nein (Windows, Mac, Linux)",
+            "Ja"
+          ],
+          [
+            "Sprachen der Oberfläche",
+            "6 (Englisch, Spanisch, Deutsch, Französisch, Portugiesisch, Italienisch)",
+            "Englisch",
+            "Englisch",
+            "Über 100",
+            "Viele"
+          ],
+          [
+            "Speichern als",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, Webseite, E-Mail, JPG, PNG",
+            "PDF, JPG, PNG",
+            "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
+            "PDF, LibreOffice-Formate, Bilder",
+            "PDF, Bilder und andere"
+          ],
+          [
+            "Vorlagen",
+            "Über 90",
+            "8",
+            "123",
+            "Wenige für Layouts",
+            "Keine"
+          ],
+          [
+            "Serienbrief",
+            "Ja, aus CSV oder Excel, mit Fotos und einer E-Mail pro Person",
+            "Nicht angegeben",
+            "Ja, aus CSV, TSV oder Excel",
+            "In Writer, nicht für .pub-Layouts",
+            "Nein"
+          ],
+          [
+            "Broschüren, Poster, Etiketten drucken",
+            "Ja, alle drei, dazu Klappkarten",
+            "Etiketten (Avery 5160)",
+            "Etiketten (29 Avery-Bögen)",
+            "Von Hand",
+            "Nein"
+          ],
+          [
+            "Viele Dateien auf einmal umwandeln",
+            "Ja",
+            "Nicht angegeben",
+            "Nicht angegeben",
+            "Mit Befehlszeilen-Werkzeugen",
+            "Unterschiedlich"
+          ],
+          [
+            "Funktioniert offline",
+            "Ja, nach dem ersten Besuch",
+            "Ja, nach dem ersten Besuch",
+            "Nicht angegeben",
+            "Ja",
+            "Nein"
+          ],
+          [
+            "Open Source",
+            "Ja (MPL 2.0)",
+            "Nicht angegeben",
+            "Kann selbst betrieben werden",
+            "Ja",
+            "Nein"
+          ],
+          [
+            "Speichert zurück als .pub",
+            "Nein",
+            "Nein",
+            "Nein",
+            "Nein",
+            "Nein"
+          ]
+        ]
+      ],
+      [
+        "h",
+        "Welches passt zu Ihnen?"
+      ],
+      [
+        "ul",
+        [
+          "Pubwork: wenn Sie .pub-Dateien in jedem Browser öffnen, ändern, drucken und umwandeln möchten, auch auf Handy oder Tablet, in Ihrer Sprache, mit Serienbrief, Broschüren und Etiketten.",
+          "LibreOffice Draw: wenn Sie lieber ein installiertes Programm als Teil eines kompletten kostenlosen Office-Pakets nutzen.",
+          "stillPUB: ein einfacher Browser-Editor, der auch Word-Dokumente und PDFs einlesen kann.",
+          "LayoutSplat: wenn Sie professionelle Layout-Exporte wie IDML oder Scribus brauchen.",
+          "Ein Online-Konverter: wenn Sie nur schnell ein PDF brauchen und das Hochladen Ihrer Datei Sie nicht stört."
+        ]
+      ],
+      [
+        "tip",
+        "Kein Programm kann zurück als .pub speichern, weil Microsoft nie veröffentlicht hat, wie man das Format schreibt. Behalten Sie Ihre ursprünglichen .pub-Dateien und speichern Sie die geänderte Fassung als PDF, Word oder in der eigenen Datei des Programms."
+      ],
+      [
+        "go",
+        "Eine .pub-Datei in Pubwork öffnen",
+        "home"
+      ]
+    ]
   },
 };

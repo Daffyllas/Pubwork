@@ -40,3 +40,34 @@
 .pw-dlg .err{color:#b42318;font-size:13.5px;margin:0}
 .parr .lockline svg{width:20px;height:20px;flex:none}
 .parr .pbtn:disabled{opacity:.4;cursor:default}
+/* turning: the round handle above the frame, and the angle while turning */
+.page .pw-ui.handle,.page .pw-ui.rot,.page .pw-ui.ch{touch-action:none}
+.page .pw-ui.rot{position:absolute;left:50%;top:0;width:14px;height:14px;margin:-30px 0 0 -7px;border-radius:50%;background:#fff;border:1.5px solid var(--accent);pointer-events:auto;zoom:calc(1 / var(--z, 1));cursor:grab;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.page .pw-ui.rot::before{content:"";position:absolute;inset:-9px;border-radius:50%}/* easier to catch */
+.page .pw-ui.rot::after{content:"";position:absolute;left:50%;top:100%;width:1.5px;height:15px;margin:1.5px 0 0 -.75px;background:var(--accent);pointer-events:none}
+.page .pw-ui.rot:active{cursor:grabbing}
+.page .pw-ui.sel.locked .rot{display:none}
+.page .pw-ui.rotlabel{position:absolute;width:0;height:0;z-index:52;pointer-events:none}
+.page .pw-ui.rotlabel span{position:absolute;left:0;top:0;zoom:calc(1 / var(--z, 1));transform:translate(14px,-30px);background:#222;color:#fff;font:600 12px/1 system-ui,sans-serif;padding:4px 6px;border-radius:5px;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media (pointer:coarse){.page .pw-ui.rot{width:20px;height:20px;margin:-38px 0 0 -10px}.page .pw-ui.rot::after{height:18px}}
+.parr-turn .parr-angle input{width:72px}
+/* cutting the edges of a picture */
+.page .pw-ui.cropui{position:absolute;width:0;height:0;z-index:51;transform-origin:0 0;pointer-events:none}
+.page .cropui .crop-full{position:absolute;overflow:hidden;pointer-events:auto;cursor:move;touch-action:none;outline:1px dashed rgba(255,255,255,.85);outline-offset:-1px}
+.page .cropui .crop-full img{display:block;width:100%;height:100%;pointer-events:none;user-select:none}
+.page .cropui .crop-win{position:absolute;box-shadow:0 0 0 3000px rgba(0,0,0,.6);outline:1px solid #fff;cursor:move}
+.page .cropui .crop-frame{position:absolute;pointer-events:none}
+.page .pw-ui.ch{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;pointer-events:auto;zoom:calc(1 / var(--z, 1))}
+.page .pw-ui.ch::after{content:"";position:absolute;box-sizing:border-box;border:0 solid #111;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)}
+.page .pw-ui.ch-nw{left:0;top:0}.page .pw-ui.ch-n{left:50%;top:0}.page .pw-ui.ch-ne{left:100%;top:0}.page .pw-ui.ch-e{left:100%;top:50%}.page .pw-ui.ch-se{left:100%;top:100%}.page .pw-ui.ch-s{left:50%;top:100%}.page .pw-ui.ch-sw{left:0;top:100%}.page .pw-ui.ch-w{left:0;top:50%}
+.page .pw-ui.ch-nw::after,.page .pw-ui.ch-ne::after,.page .pw-ui.ch-se::after,.page .pw-ui.ch-sw::after{width:16px;height:16px}
+.page .pw-ui.ch-nw::after{left:11px;top:11px;border-left-width:4px;border-top-width:4px}
+.page .pw-ui.ch-ne::after{right:11px;top:11px;border-right-width:4px;border-top-width:4px}
+.page .pw-ui.ch-se::after{right:11px;bottom:11px;border-right-width:4px;border-bottom-width:4px}
+.page .pw-ui.ch-sw::after{left:11px;bottom:11px;border-left-width:4px;border-bottom-width:4px}
+.page .pw-ui.ch-n::after,.page .pw-ui.ch-s::after{left:3px;width:22px;height:4px;background:#111}.page .pw-ui.ch-n::after{top:11px}.page .pw-ui.ch-s::after{bottom:11px}
+.page .pw-ui.ch-e::after,.page .pw-ui.ch-w::after{top:3px;width:4px;height:22px;background:#111}.page .pw-ui.ch-e::after{right:11px}.page .pw-ui.ch-w::after{left:11px}
+@media (pointer:coarse){.page .pw-ui.ch{width:40px;height:40px;margin:-20px 0 0 -20px}.page .pw-ui.ch-nw::after{left:17px;top:17px}.page .pw-ui.ch-ne::after{right:17px;top:17px}.page .pw-ui.ch-se::after{right:17px;bottom:17px}.page .pw-ui.ch-sw::after{left:17px;bottom:17px}.page .pw-ui.ch-n::after,.page .pw-ui.ch-s::after{left:9px}.page .pw-ui.ch-n::after{top:17px}.page .pw-ui.ch-s::after{bottom:17px}.page .pw-ui.ch-e::after,.page .pw-ui.ch-w::after{top:9px}.page .pw-ui.ch-e::after{right:17px}.page .pw-ui.ch-w::after{left:17px}}
+.page .pw-ui.cropdone{position:absolute;width:0;height:0;z-index:52}
+.page .pw-ui.cropdone button{position:absolute;left:0;top:0;transform:translate(-50%,10px);zoom:calc(1 / var(--z, 1));pointer-events:auto;min-height:34px;padding:0 16px;border-radius:17px;border:0;background:var(--accent);color:var(--accent-ink,#fff);font:600 14px system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);white-space:nowrap}
+.pcrop .btn svg{width:18px;height:18px;flex:none}

@@ -25,3 +25,4 @@ tools/reader/out/
 
 # test files (fetched by tools/fetch-test-files.sh)
 tests/
+/public/llms.txt

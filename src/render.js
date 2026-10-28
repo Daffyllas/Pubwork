@@ -147,7 +147,9 @@ function addCss() {
 .page p.para.dropcap::first-letter{initial-letter:var(--dc-lines);-webkit-initial-letter:var(--dc-lines);font-family:var(--dc-font);color:var(--dc-color);margin-right:.06em;font-style:normal}
 @supports not ((initial-letter:2) or (-webkit-initial-letter:2)){.page p.para.dropcap::first-letter{float:left;font-size:var(--dc-size);line-height:1;margin:var(--dc-m)}}
 .page a.pwlink{color:inherit;text-decoration:inherit;cursor:inherit}
-.page .text [data-field]{white-space:nowrap}`;
+.page .text [data-field]{white-space:nowrap}
+.page .text span.bullet{user-select:none;-webkit-user-select:none}
+.page .text span.bullet.hang{display:inline-block;text-indent:0;white-space:nowrap}`;
   document.head.appendChild(s);
   // links on the page never open by accident; Ctrl/Cmd-click opens them in a new tab
   document.addEventListener('click', (e) => {
@@ -248,28 +250,92 @@ export function refreshDropCaps(root) {
     if (size > 0) dropCapSize(p, dc, size, fam, lh);
   }
 }
-function parasInto(box, paras, ctx, base = { p: 0, c: 0 }) {
+// ---------------------------------------------------------------- lists: bullets and numbering
+// A paragraph is a list item when it has a bullet (the bullet's character, as .pub files give it) or a
+// number (num: '1', 'a', 'A', 'i' or 'I', the kind of numbers; numSuffix: what follows the number, '.'
+// unless set; numStart: the number this paragraph starts again at). The numbers are never stored: they
+// are counted afresh every time, through the list paragraphs that follow one another, each indent level
+// (indentLeft) on its own, so adding, removing or moving an item numbers the list again by itself.
+const ROMAN = [[1000, 'm'], [900, 'cm'], [500, 'd'], [400, 'cd'], [100, 'c'], [90, 'xc'], [50, 'l'], [40, 'xl'], [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
+export function numText(kind, n) {
+  let s = String(n);
+  if (/^[aA]$/.test(kind)) { s = ''; for (let v = n; v > 0; v = Math.floor((v - 1) / 26)) s = String.fromCharCode(97 + ((v - 1) % 26)) + s; }
+  else if (/^[iI]$/.test(kind)) { s = ''; let v = n; for (const [k, r] of ROMAN) while (v >= k) { s += r; v -= k; } }
+  return kind === 'A' || kind === 'I' ? s.toUpperCase() : s;
+}
+export const isListPara = (pa) => !!(pa && (pa.num || pa.bullet));
+// the marker of every paragraph of a story: { text, kind: 'bullet'|'num', level, n, num, seq } or null.
+// seq: which run of numbers (or bullets) the item belongs to, for formats that keep lists as lists (Word).
+export function listLabels(paras) {
+  const out = []; let stack = [], seq = 0;
+  for (const pa of paras || []) {
+    if (!isListPara(pa)) { out.push(null); stack = []; continue; }
+    const ind = +pa.indentLeft || 0;
+    while (stack.length && stack[stack.length - 1].ind > ind + 0.5) stack.pop();
+    let top = stack[stack.length - 1];
+    if (!top || top.ind < ind - 0.5) { top = { ind, count: 0, kind: null }; stack.push(top); }
+    const level = stack.length - 1;
+    if (pa.num) {
+      const start = Math.floor(+pa.numStart) > 0 ? Math.floor(+pa.numStart) : 0;
+      if (top.kind !== 'num' || top.num !== pa.num || start) { Object.assign(top, { kind: 'num', num: pa.num, count: start ? start - 1 : 0, seq: ++seq }); }
+      top.count++;
+      out.push({ text: numText(pa.num, top.count) + (pa.numSuffix ?? '.'), kind: 'num', level, n: top.count, num: pa.num, seq: top.seq });
+    } else {
+      if (top.kind !== 'bullet' || top.bullet !== pa.bullet) Object.assign(top, { kind: 'bullet', bullet: pa.bullet, num: null, count: 0, seq: ++seq });
+      out.push({ text: String(pa.bullet), kind: 'bullet', level, seq: top.seq });
+    }
+  }
+  return out;
+}
+// the marker in front of a list paragraph. With a hanging indent (the first line starts further left) it
+// fills the space up to the indent, so the words of every line start at the same place.
+// look: { fontFamily, fontSize, color } of the paragraph's first words
+export function setMarker(p, text, pa = {}, look = null) {
+  p.querySelectorAll('.bullet').forEach((b) => b.remove());
+  if (!text || pa.cont) return null;
+  const b = el('span', 'bullet'); b.textContent = text + '\u00a0'; b.contentEditable = 'false';
+  if (look) for (const k of ['fontFamily', 'fontSize', 'color']) if (look[k]) b.style[k] = look[k];
+  if (pa.indentFirst < 0) { b.classList.add('hang'); b.style.minWidth = pt(-pa.indentFirst); }
+  p.insertBefore(b, p.firstChild);
+  return b;
+}
+// Spacing, indents and list settings are also kept on each drawn paragraph (data-pp), so that while typing
+// they stay with their paragraph when Enter splits it, and can change (see editor/text.js readParas)
+export const PP_KEYS = ['spaceBefore', 'spaceAfter', 'indentLeft', 'indentRight', 'indentFirst', 'lineHeight', 'background', 'bullet', 'num', 'numSuffix', 'numStart'];
+export function stampPara(p, pa) {
+  const o = {}; for (const k of PP_KEYS) if (pa[k] != null && pa[k] !== '' && pa[k] !== 0) o[k] = pa[k];
+  if (Object.keys(o).length) p.dataset.pp = JSON.stringify(o); else delete p.dataset.pp;
+}
+// a paragraph's spacing, indents and background as inline styles (also while typing, when they change)
+export function paraLook(p, pa) {
+  const st = p.style;
+  st.marginTop = pa.spaceBefore && !pa.cont ? pt(pa.spaceBefore) : '';
+  st.marginBottom = pa.spaceAfter ? pt(pa.spaceAfter) : '';
+  st.marginLeft = pa.indentLeft ? pt(pa.indentLeft) : '';
+  st.marginRight = pa.indentRight ? pt(pa.indentRight) : '';
+  st.textIndent = pa.indentFirst && !pa.cont ? pt(pa.indentFirst) : '';
+  st.lineHeight = pa.lineHeight?.mult ? String(+(pa.lineHeight.mult * 1.2).toFixed(3)) : pa.lineHeight?.pt ? pt(pa.lineHeight.pt) : '';
+  if (pa.lineHeight) p.dataset.lh = '1'; else delete p.dataset.lh;
+  st.backgroundColor = pa.background || '';
+}
+function parasInto(box, paras, ctx, base = { p: 0, c: 0 }, story = null) {
+  // list numbers count through the whole story, also the part shown in an earlier linked box
+  const labels = listLabels(story || paras), off = story ? base.p : 0;
   paras.forEach((pa, k) => {
     const p = el('p', 'para');
     p.dataset.pi = base.p + k; p.dataset.c0 = k === 0 ? base.c : 0;
     if (pa.cont) p.classList.add('cont');
     const st = p.style;
     if (pa.align) st.textAlign = pa.align;
-    if (pa.spaceBefore && !pa.cont) st.marginTop = pt(pa.spaceBefore);
-    if (pa.spaceAfter) st.marginBottom = pt(pa.spaceAfter);
-    if (pa.indentLeft) st.marginLeft = pt(pa.indentLeft);
-    if (pa.indentRight) st.marginRight = pt(pa.indentRight);
-    if (pa.indentFirst && !pa.cont) st.textIndent = pt(pa.indentFirst);
-    if (pa.lineHeight?.mult) st.lineHeight = String(+(pa.lineHeight.mult * 1.2).toFixed(3));
-    else if (pa.lineHeight?.pt) st.lineHeight = pt(pa.lineHeight.pt);
-    if (pa.lineHeight) p.dataset.lh = '1';
-    if (pa.background) st.backgroundColor = pa.background;
-    if (pa.bullet && !pa.cont) { const b = el('span', 'bullet'); b.textContent = pa.bullet + '\u00a0'; p.appendChild(b); }
+    paraLook(p, pa); stampPara(p, pa);
     const maxSize = Math.max(0, ...pa.runs.map((r) => r.size || 0));
     if (!pa.runs.length || pa.runs.every((r) => !r.text)) { p.dataset.empty = '1'; p.appendChild(document.createTextNode('\u200b')); if (maxSize || ctx.lastSize) st.fontSize = pt(maxSize || ctx.lastSize); }
     // the paragraph's own (empty) line is no taller than its smallest text, so small text fits short boxes
     else if (maxSize && pa.runs.every((r) => r.size || !r.text)) { const min = Math.min(...pa.runs.filter((r) => r.text).map((r) => r.size)); if (min < 10) st.fontSize = pt(min); } // (10 pt: the boxes' own size)
     const r0 = pa.runs.find((r) => r.text);
+    // the bullet or number is in the font, size and colour of the paragraph's first words
+    const lab = labels[off + k];
+    if (lab) setMarker(p, lab.text, pa, r0 ? { fontFamily: cssFamily(r0.font || ctx.defaultFont, ctx.embedded), fontSize: r0.size ? pt(r0.size) : '', color: r0.color || '' } : null);
     paraExtras(p, pa, r0?.size || ctx.lastSize || 10, cssFamily(r0?.font || ctx.defaultFont, ctx.embedded));
     for (const r of pa.runs) { if (r.text) p.appendChild(runSpan(r, ctx)); if (r.size) ctx.lastSize = r.size; }
     if (p.querySelector('span.tab')) p.classList.add('tabbed'); // lines with tabs line up from the left, as tab stops are measured from there
@@ -597,12 +663,12 @@ export function flowLinkedText(root, opts = {}) {
       const ctx = { uid: 0, embedded: opts.embedded || new Set(), pending: [], defaultFont: 'Times New Roman', lastSize: 10, note() {}, ...(box.__ctx || {}) };
       const flow = box.querySelector('.flow'); flow.textContent = '';
       if (!start) return; // the story already ended in an earlier box
-      parasInto(flow, sliceParas(paras, start), ctx, start); wrapFlow(box, flow); layoutBox(box);
+      parasInto(flow, sliceParas(paras, start), ctx, start, paras); wrapFlow(box, flow); layoutBox(box);
       if (k === boxes.length - 1) return;
       const cut = findCut(box, flow);
       if (!cut) { start = null; return; }
       flow.textContent = '';
-      parasInto(flow, sliceParas(paras, start, cut), ctx, start); wrapFlow(box, flow); layoutBox(box);
+      parasInto(flow, sliceParas(paras, start, cut), ctx, start, paras); wrapFlow(box, flow); layoutBox(box);
       start = cut;
     });
   }

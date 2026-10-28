@@ -2,6 +2,7 @@
 // support, and newer privacy and terms. {email}, {site} and {kofi} come from site.config.json.
 export default {
   slugs: {
+    compare: "compare-pub-editors",
     edit: "edit-pub-files-online",
     word: 'pub-to-word', batch: 'convert-many-pub-files', alternative: 'publisher-alternative',
     mac: 'open-pub-files-on-mac', chromebook: 'open-pub-files-on-chromebook', mobile: 'open-pub-files-on-iphone-ipad-android',
@@ -11,6 +12,7 @@ export default {
     'guide-labels': 'print-labels-and-business-cards', it: 'for-it-teams', support: 'support',
   },
   nav: {
+    compare: "Compare .pub editors",
     edit: "Edit .pub files",
     word: '.pub to Word', batch: 'Convert many files', alternative: 'Publisher alternative',
     mac: 'On a Mac', chromebook: 'On a Chromebook', mobile: 'On a phone or tablet',
@@ -84,7 +86,7 @@ export default {
         'Microsoft retired Publisher in October 2026 and suggests Word, PowerPoint or Designer instead. Those are good programs, but they don’t open .pub files, and they aren’t made for laying out a page. Pubwork is: text boxes that you place anywhere, text that flows from one box to the next, pictures, shapes, tables and pages.',
       ],
       steps: [
-        ['Open an old file or a template', 'Drag in a .pub file, or choose one of 89 free templates.'],
+        ['Open an old file or a template', 'Drag in a .pub file, or choose one of more than 90 free templates.'],
         ['Change it like in Publisher', 'Double-click text to type. Drag things to move them. One click changes all colours or fonts.'],
         ['Print or save', 'Print booklets, labels and several copies per sheet, or save as PDF, Word or pictures.'],
       ],
@@ -96,7 +98,7 @@ export default {
       faq: [
         ['Is Pubwork really free?', 'Yes. Opening, editing, printing and saving are free, with no watermark and no limit. The website may show ads on its information pages, never inside the editor.'],
         ['Can I save back to .pub?', 'No. Microsoft never published how to write .pub files. Pubwork opens them and saves in its own file, plus PDF, Word, LibreOffice Draw, JPG and PNG.'],
-        ['Is it as powerful as Publisher?', 'For everyday work (flyers, newsletters, menus, cards, labels, booklets, mail merge) it does what most people used Publisher for. Some special features, like WordArt editing and colour separations for print shops, are not there yet.'],
+        ['Is it as powerful as Publisher?', 'For everyday work (flyers, newsletters, menus, cards, labels, booklets, mail merge) it does what most people used Publisher for. It also has WordArt, colour separations for print shops, styles, master pages and spell checking. It can’t save back to .pub, and a few rarely used Publisher tools, such as its web-page features, aren’t there.'],
         ['Do I have to learn something new?', 'Very little. The page is in the middle, pages on the left, and the options for what you clicked on the right, just as in Publisher.'],
         ['What about Word, PowerPoint, Canva or Scribus?', 'Word and PowerPoint don’t open .pub files and are awkward for layouts. Canva needs an account and doesn’t open .pub files. Scribus and LibreOffice Draw are powerful but harder to learn. Pubwork is made to feel like Publisher.'],
       ],
@@ -507,5 +509,173 @@ export default {
       ['h', 'Contact'],
       ['p', '{email}'],
     ],
+  },
+  compare: {
+    "title": "Free .pub file editors compared: Pubwork, stillPUB, LayoutSplat, LibreOffice | Pubwork",
+    "desc": "An honest side-by-side look at the free ways to open and edit Microsoft Publisher (.pub) files now that Publisher is retired: browser editors, LibreOffice Draw and online converters.",
+    "h1": "Ways to open and edit .pub files, compared",
+    "updated": "Last checked: {date}",
+    "body": [
+      [
+        "p",
+        "Since Microsoft retired Publisher, several free tools can open .pub files. They are good at different things. This table compares them on what most people need. Information about other tools comes from their own websites and may have changed since we checked."
+      ],
+      [
+        "table",
+        [
+          "",
+          "Pubwork",
+          "stillPUB",
+          "LayoutSplat",
+          "LibreOffice Draw",
+          "Online converters (Zamzar, Aspose…)"
+        ],
+        [
+          [
+            "Price",
+            "Free",
+            "Free",
+            "Free",
+            "Free",
+            "Free, with limits"
+          ],
+          [
+            "Install",
+            "Nothing: works in the browser",
+            "Nothing: works in the browser",
+            "Nothing: works in the browser",
+            "Program to install",
+            "Nothing: website"
+          ],
+          [
+            "Is your file uploaded?",
+            "No, it stays on your device",
+            "No, it stays on your device",
+            "Not stated",
+            "No, it stays on your computer",
+            "Yes, it is sent to their server"
+          ],
+          [
+            "Opens .pub files",
+            "Yes",
+            "Yes",
+            "Yes (they advise checking each page)",
+            "Yes",
+            "Converts only"
+          ],
+          [
+            "Edit text and pictures",
+            "Yes",
+            "Yes",
+            "Yes",
+            "Yes",
+            "No"
+          ],
+          [
+            "Phones and tablets",
+            "Yes (iPhone, iPad, Android)",
+            "Computers (Chrome, Edge, Firefox)",
+            "Not stated",
+            "No (Windows, Mac, Linux)",
+            "Yes"
+          ],
+          [
+            "Interface languages",
+            "6 (English, Spanish, German, French, Portuguese, Italian)",
+            "English",
+            "English",
+            "More than 100",
+            "Many"
+          ],
+          [
+            "Save as",
+            "PDF, Word, PowerPoint, LibreOffice Draw, XPS, web page, e-mail, JPG, PNG",
+            "PDF, JPG, PNG",
+            "PDF, PNG, JPEG, SVG, IDML, Scribus, HTML",
+            "PDF, LibreOffice formats, pictures",
+            "PDF, pictures and others"
+          ],
+          [
+            "Templates",
+            "More than 90",
+            "8",
+            "123",
+            "Few for page layouts",
+            "None"
+          ],
+          [
+            "Mail merge",
+            "Yes, from CSV or Excel, with photos and one e-mail per person",
+            "Not stated",
+            "Yes, from CSV, TSV or Excel",
+            "In Writer, not for .pub layouts",
+            "No"
+          ],
+          [
+            "Print booklets, posters, labels",
+            "Yes, all three, plus folded cards",
+            "Labels (Avery 5160)",
+            "Labels (29 Avery sheets)",
+            "By hand",
+            "No"
+          ],
+          [
+            "Convert many files at once",
+            "Yes",
+            "Not stated",
+            "Not stated",
+            "With command-line tools",
+            "Varies"
+          ],
+          [
+            "Works offline",
+            "Yes, after the first visit",
+            "Yes, after the first visit",
+            "Not stated",
+            "Yes",
+            "No"
+          ],
+          [
+            "Open source",
+            "Yes (MPL 2.0)",
+            "Not stated",
+            "Can be self-hosted",
+            "Yes",
+            "No"
+          ],
+          [
+            "Saves back to .pub",
+            "No",
+            "No",
+            "No",
+            "No",
+            "No"
+          ]
+        ]
+      ],
+      [
+        "h",
+        "Which one should you use?"
+      ],
+      [
+        "ul",
+        [
+          "Pubwork: if you want to open, change, print and convert .pub files in any browser, including on a phone or tablet, in your own language, with mail merge, booklets and labels.",
+          "LibreOffice Draw: if you prefer a program installed on your computer, as part of a full free office suite.",
+          "stillPUB: a simple browser editor that can also bring in Word documents and PDFs.",
+          "LayoutSplat: if you need professional layout exports such as IDML or Scribus.",
+          "An online converter: if you only need a quick PDF and don’t mind your file being uploaded."
+        ]
+      ],
+      [
+        "tip",
+        "No tool can save back to .pub, because Microsoft never published how to write the format. Keep your original .pub files, and save your changed version as PDF, Word or the tool’s own file."
+      ],
+      [
+        "go",
+        "Open a .pub file in Pubwork",
+        "home"
+      ]
+    ]
   },
 };

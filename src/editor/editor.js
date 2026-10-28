@@ -1,11 +1,17 @@
 // The editor: pick things on the page, move and resize them, type in text boxes, add text, pictures and
 // shapes, and undo. Every change goes through change(), which saves an undo step, updates the document
 // and redraws the page. The page on screen is drawn from the document, so what you see is what is saved.
-import { History, clone, findItem, bounds, unionBounds, moveItem, resizeItem, reId, uid } from './model.js';
+import { History, clone, findItem, bounds, unionBounds, moveItem, resizeItem, reId, uid, frameOf, frameBox, drawnBounds, isTurned, turnItems, resizeInFrame, normAngle, toLocal, toPage, axes } from './model.js';
+import { drawCrop, cropPointer, cropState, applyCrop, sameCrop, uncrop } from './crop.js';
 import { readParas, applyRunStyle, applyParaStyle, styleAtCaret } from './text.js';
 import { t } from '../i18n/index.js';
 
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+// which way each handle pulls (degrees on the page, 0 = right, 90 = down) and the cursor for it once turned
+const PULL = { e: 0, se: 45, s: 90, sw: 135, w: 180, nw: 225, n: 270, ne: 315 };
+const cursorFor = (h, a) => ['ew-resize', 'nwse-resize', 'ns-resize', 'nesw-resize'][Math.round((((PULL[h] + a) % 180) + 180) % 180 / 45) % 4];
+const RAD = Math.PI / 180;
+const ownTurn = (n) => { const m = /rotate\((-?[\d.e-]+)deg\)/.exec(n.style.transform || ''); return m ? parseFloat(m[1]) : 0; };
 const isMod = (e) => e.ctrlKey || e.metaKey;
 const REFIT = new Set(['text style', 'style']); // changes after which boxes that grow with their text fit it again
 
@@ -34,7 +40,7 @@ export class Editor {
   get page() { return this.doc?.pages[this.pageIndex]; }
   get pageEl() { return this.app.pageEls?.[this.pageIndex]; }
   reset() {
-    this.history.reset(); this.sel = []; this.editing = null; this.pageIndex = 0; this.app.updateToolbar?.();
+    this.history.reset(); this.sel = []; this.editing = null; this.cropping = null; this.pageIndex = 0; this.app.updateToolbar?.();
     document.getElementById('desk')?.removeAttribute('aria-label');
   }
 
@@ -44,6 +50,7 @@ export class Editor {
   selectedItems() { const pg = this.page; return pg ? this.sel.map((id) => pg.items.find((it) => it.id === id)).filter(Boolean) : []; }
   select(ids, pageIndex = this.pageIndex) {
     if (this.editing) this.endEdit();
+    if (this.cropping) this.endCrop();
     this.pageIndex = pageIndex; this.sel = ids;
     this.drawSelection(); this.app.panel?.show(); this.app.updateToolbar?.();
   }
@@ -55,11 +62,23 @@ export class Editor {
     // the page area can take the keyboard: Tab picks the items on the page
     const desk = document.getElementById('desk');
     if (desk && this.doc) { desk.tabIndex = 0; const l = t('ed.kbd.desk'); if (desk.getAttribute('aria-label') !== l) desk.setAttribute('aria-label', l); }
-    const items = this.selectedItems(); if (!items.length || !this.pageEl) return;
-    const b = unionBounds(items); if (!b) return;
+    document.querySelectorAll('.pw-ui.cropui, .pw-ui.cropdone').forEach((n) => n.remove());
+    const items = this.selectedItems(); if (!items.length || !this.pageEl) { this.cropping = null; return; }
+    if (this.cropping) { // cutting the edges of a picture: its own marks instead of the frame
+      if (items.length === 1 && items[0].id === this.cropping.id) { drawCrop(this, this.pageEl); return; }
+      this.cropping = null;
+    }
+    // the frame: around one thing, turned with it; around several, upright
+    const f = frameOf(items); if (!f) return;
     const box = document.createElement('div'); box.className = 'pw-ui sel' + (this.editing ? ' typing' : '');
-    Object.assign(box.style, { left: `${b.x}pt`, top: `${b.y}pt`, width: `${Math.max(b.w, 0.1)}pt`, height: `${Math.max(b.h, 0.1)}pt` });
-    if (!this.editing) for (const h of HANDLES) { const d = document.createElement('div'); d.className = `pw-ui handle h-${h}`; d.dataset.handle = h; box.appendChild(d); }
+    Object.assign(box.style, { left: `${f.cx - f.w / 2}pt`, top: `${f.cy - f.h / 2}pt`, width: `${Math.max(f.w, 0.1)}pt`, height: `${Math.max(f.h, 0.1)}pt` });
+    if (f.a) box.style.transform = `rotate(${-f.a}deg)`;
+    if (!this.editing) {
+      for (const h of HANDLES) { const d = document.createElement('div'); d.className = `pw-ui handle h-${h}`; d.dataset.handle = h; if (f.a) d.style.cursor = cursorFor(h, -f.a); box.appendChild(d); }
+      // the round handle above the frame: drag it to turn
+      const r = document.createElement('div'); r.className = 'pw-ui rot'; r.dataset.handle = 'rot'; r.title = t('obj.turnHandle');
+      box.appendChild(r);
+    }
     this.pageEl.appendChild(box);
   }
 
@@ -70,6 +89,15 @@ export class Editor {
     const pageEl = e.target.closest('.page'); if (!pageEl) { if (!this.editing) this.clear(); return; }
     const pageIndex = this.app.pageEls.indexOf(pageEl);
     if (this.editing && this.editing.container.contains(e.target)) return; // clicking inside the text being typed
+    if (this.cropping) { // a press anywhere else finishes cutting (and then does what it does)
+      if (cropPointer(this, e, pageEl)) return;
+      this.endCrop();
+      if (!pageEl.isConnected) { // the page was drawn again: look again at what is under the pointer
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        if (el) this.onPointerDown({ button: 0, target: el, clientX: e.clientX, clientY: e.clientY, shiftKey: e.shiftKey, altKey: e.altKey, preventDefault: () => e.preventDefault() });
+        return;
+      }
+    }
     const handle = e.target.dataset?.handle;
     if (handle && pageIndex === this.pageIndex) { e.preventDefault(); this.startDrag(e, pageEl, handle); return; }
     const id = this.unitOf(e.target);
@@ -81,30 +109,61 @@ export class Editor {
   }
   startDrag(e, pageEl, handle) {
     const items = this.selectedItems(); if (!items.length) return;
-    const start = this.pagePoint(e, pageEl), b0 = unionBounds(items), pg = this.page;
-    const nodes = this.sel.flatMap((id) => this.nodesOf(id));
+    if (items.some((it) => it.locked)) return; // locked items stay where they are
+    const start = this.pagePoint(e, pageEl), pg = this.page;
+    const f0 = frameOf(items), b0 = frameBox(f0), turned = isTurned(items);
+    // what is drawn for the picked things, with its own turn, so it can follow the pointer straight away
+    const nodes = this.sel.flatMap((id) => this.nodesOf(id)).map((n) => ({ n, tf: n.style.transform, to: n.style.transformOrigin, own: ownTurn(n), l: parseFloat(n.style.left) || 0, t: parseFloat(n.style.top) || 0, w: parseFloat(n.style.width) || 0, h: parseFloat(n.style.height) || 0 }));
     const selBox = pageEl.querySelector('.pw-ui.sel');
     const zoomPx = pageEl.getBoundingClientRect().width / pg.w; // screen px per point
     const snapPx = 6 / zoomPx;
-    const others = pg.items.filter((it) => !this.sel.includes(it.id)).map(bounds);
+    const others = pg.items.filter((it) => !this.sel.includes(it.id)).map(drawnBounds);
     const extra = this.app.snapLines?.(pg) || { xs: [], ys: [] }; // layout guides, margins, columns
     const xs = [0, pg.w / 2, pg.w, ...extra.xs, ...others.flatMap((o) => [o.x, o.x + o.w / 2, o.x + o.w])];
     const ys = [0, pg.h / 2, pg.h, ...extra.ys, ...others.flatMap((o) => [o.y, o.y + o.h / 2, o.y + o.h])];
-    if (items.some((it) => it.locked)) return; // locked items stay where they are
-    let moved = false, result = null;
+    let moved = false, result = null, turn = 0;
     const keepRatio = handle && handle.length === 2 && items.every((it) => it.type === 'image');
+    // show a change of the frame on the page: m = [a, b, c, d] (as CSS matrix) around the frame's middle, then moved by dx, dy
+    const preview = (dx, dy, m) => {
+      for (const o of nodes) {
+        const ncx = o.l + o.w / 2, ncy = o.t + o.h / 2;
+        o.n.style.transformOrigin = `${f0.cx - o.l}pt ${f0.cy - o.t}pt`;
+        o.n.style.transform = `translate(${dx}pt, ${dy}pt) matrix(${m.map((v) => +v.toFixed(6)).join(', ')}, 0, 0)` + (o.own ? ` translate(${ncx - f0.cx}pt, ${ncy - f0.cy}pt) rotate(${o.own}deg) translate(${f0.cx - ncx}pt, ${f0.cy - ncy}pt)` : '');
+      }
+    };
+    const frameTo = (f) => { if (selBox) Object.assign(selBox.style, { left: `${f.cx - f.w / 2}pt`, top: `${f.cy - f.h / 2}pt`, width: `${Math.max(f.w, 0.1)}pt`, height: `${Math.max(f.h, 0.1)}pt`, transform: f.a ? `rotate(${-f.a}deg)` : '' }); };
+    let label = null;
     const onMove = (ev) => {
       const [px, py] = this.pagePoint(ev, pageEl);
-      let dx = px - start[0], dy = py - start[1];
+      const dx = px - start[0], dy = py - start[1];
       if (!moved && Math.hypot(dx * zoomPx, dy * zoomPx) < 3) return;
       moved = true;
-      let nb;
-      if (!handle) {
-        nb = { ...b0, x: b0.x + dx, y: b0.y + dy };
+      if (handle === 'rot') { // turning: by the angle the pointer went round the middle
+        const at = (x, y) => Math.atan2(y - f0.cy, x - f0.cx);
+        let want = f0.a - (at(px, py) - at(...start)) / RAD;
+        want = Math.round(want * 10) / 10;
+        if (ev.shiftKey) want = Math.round(want / 15) * 15;
+        else { const q = Math.round(want / 90) * 90; if (Math.abs(want - q) < 2) want = q; } // upright and quarter turns pull a little
+        turn = normAngle(want - f0.a);
+        const p = -turn * RAD;
+        preview(0, 0, [Math.cos(p), Math.sin(p), -Math.sin(p), Math.cos(p)]);
+        frameTo({ ...f0, a: f0.a + turn });
+        if (!label) { label = document.createElement('div'); label.className = 'pw-ui rotlabel'; label.appendChild(document.createElement('span')); pageEl.appendChild(label); }
+        label.firstChild.textContent = `${Math.round(((-normAngle(want) % 360) + 360) % 360 * 10) / 10 % 360}°`;
+        Object.assign(label.style, { left: `${px}pt`, top: `${py}pt` });
+        return;
+      }
+      let f1;
+      if (!handle) { // moving
+        const nb = { ...b0, x: b0.x + dx, y: b0.y + dy };
         const sx = snap([nb.x, nb.x + nb.w / 2, nb.x + nb.w], xs, snapPx), sy = snap([nb.y, nb.y + nb.h / 2, nb.y + nb.h], ys, snapPx);
         if (!ev.altKey) { nb.x += sx.d; nb.y += sy.d; }
         this.guides(pageEl, ev.altKey ? null : sx.at, ev.altKey ? null : sy.at);
-      } else {
+        result = nb; f1 = { ...f0, cx: f0.cx + nb.x - b0.x, cy: f0.cy + nb.y - b0.y };
+        preview(nb.x - b0.x, nb.y - b0.y, [1, 0, 0, 1]);
+        frameTo(f1); return;
+      }
+      if (!f0.a) { // an upright frame: its edges snap to guides and other things
         let x0 = b0.x, y0 = b0.y, x1 = b0.x + b0.w, y1 = b0.y + b0.h;
         if (handle.includes('w')) x0 += dx; if (handle.includes('e')) x1 += dx;
         if (handle.includes('n')) y0 += dy; if (handle.includes('s')) y1 += dy;
@@ -115,32 +174,46 @@ export class Editor {
         const sxs = snap([handle.includes('w') ? x0 : x1], xs, snapPx), sys = snap([handle.includes('n') ? y0 : y1], ys, snapPx);
         if (!ev.altKey && !keepRatio) { if (handle.includes('w')) x0 += sxs.d; else if (handle.includes('e')) x1 += sxs.d; if (handle.includes('n')) y0 += sys.d; else if (handle.includes('s')) y1 += sys.d; }
         this.guides(pageEl, handle.match(/[we]/) ? sxs.at : null, handle.match(/[ns]/) ? sys.at : null);
-        nb = { x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.max(1, Math.abs(x1 - x0)), h: Math.max(b0.h ? 1 : 0, Math.abs(y1 - y0)) };
+        const nb = { x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.max(1, Math.abs(x1 - x0)), h: Math.max(b0.h ? 1 : 0, Math.abs(y1 - y0)) };
+        f1 = { cx: nb.x + nb.w / 2, cy: nb.y + nb.h / 2, w: nb.w, h: nb.h, a: 0 }; result = nb;
+      } else { // a turned frame: its edges move along its own sides; the opposite side stays put
+        const [ex, ey] = axes(f0.a), du = dx * ex[0] + dy * ex[1], dv = dx * ey[0] + dy * ey[1];
+        let l = -f0.w / 2, r = f0.w / 2, tp = -f0.h / 2, bt = f0.h / 2;
+        if (handle.includes('w')) l += du; if (handle.includes('e')) r += du;
+        if (handle.includes('n')) tp += dv; if (handle.includes('s')) bt += dv;
+        if (keepRatio || ev.shiftKey) {
+          const k = f0.w / (f0.h || 1), w = Math.abs(r - l), h = Math.abs(bt - tp);
+          if (w / k > h) { const nh = w / k; if (handle.includes('n')) tp = bt - nh; else bt = tp + nh; } else { const nw = h * k; if (handle.includes('w')) l = r - nw; else r = l + nw; }
+        }
+        const w = Math.max(1, Math.abs(r - l)), h = Math.max(f0.h ? 1 : 0, Math.abs(bt - tp));
+        const [cx, cy] = toPage(f0, [(l + r) / 2, (tp + bt) / 2]);
+        f1 = { cx, cy, w, h, a: f0.a }; result = f1;
       }
-      result = nb;
-      // show it straight away; the document changes when the mouse is let go
-      const sx = b0.w ? nb.w / b0.w : 1, sy = b0.h ? nb.h / b0.h : 1;
-      for (const n of nodes) {
-        const l = parseFloat(n.style.left) || 0, tp = parseFloat(n.style.top) || 0;
-        n.style.transformOrigin = `${b0.x - l}pt ${b0.y - tp}pt`;
-        n.style.translate = `${nb.x - b0.x}pt ${nb.y - b0.y}pt`;
-        n.style.scale = handle ? `${sx} ${sy}` : '';
-      }
-      if (selBox) Object.assign(selBox.style, { left: `${nb.x}pt`, top: `${nb.y}pt`, width: `${nb.w}pt`, height: `${nb.h}pt` });
+      // show it straight away; the document changes when the pointer is let go
+      const sx = f0.w ? f1.w / f0.w : 1, sy = f0.h ? f1.h / f0.h : 1, [ex, ey] = axes(f0.a);
+      const A00 = sx * ex[0] * ex[0] + sy * ey[0] * ey[0], A01 = sx * ex[0] * ex[1] + sy * ey[0] * ey[1], A11 = sx * ex[1] * ex[1] + sy * ey[1] * ey[1];
+      preview(f1.cx - f0.cx, f1.cy - f0.cy, [A00, A01, A01, A11]);
+      frameTo(f1); this.resized = f1;
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onCancel);
+      this.guides(pageEl, null, null); label?.remove();
     };
     const onUp = () => {
-      window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onCancel);
-      this.guides(pageEl, null, null);
-      if (!moved || !result) return;
+      stop();
+      if (!moved) return;
+      if (handle === 'rot') { if (turn) this.change('turn', () => turnItems(this.selectedItems(), turn, f0.cx, f0.cy)); else onCancel(); return; }
+      if (!result) return;
+      const f1 = this.resized; this.resized = null;
       this.change(handle ? 'resize' : 'move', () => {
         for (const it of this.selectedItems()) {
-          if (handle) { resizeItem(it, b0, result); markEdited(it); } else moveItem(it, result.x - b0.x, result.y - b0.y);
+          if (!handle) moveItem(it, result.x - b0.x, result.y - b0.y);
+          else { if (!turned && !f0.a) resizeItem(it, b0, result); else resizeInFrame(it, f0, f1); markEdited(it); }
         }
       });
     };
     const onCancel = () => { // the browser took over (e.g. scrolling on a touch screen): put things back
-      window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); window.removeEventListener('pointercancel', onCancel);
-      this.guides(pageEl, null, null); for (const n of nodes) { n.style.translate = ''; n.style.scale = ''; } this.drawSelection();
+      stop(); for (const o of nodes) { o.n.style.transform = o.tf; o.n.style.transformOrigin = o.to; } this.drawSelection();
     };
     window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp); window.addEventListener('pointercancel', onCancel);
   }
@@ -189,8 +262,8 @@ export class Editor {
     }
     return changed;
   }
-  undo() { if (this.editing) this.endEdit(); if (this.history.undo(this.doc)) this.afterHistory(); }
-  redo() { if (this.editing) this.endEdit(); if (this.history.redo(this.doc)) this.afterHistory(); }
+  undo() { if (this.editing) this.endEdit(); if (this.dropCrop()) return; if (this.history.undo(this.doc)) this.afterHistory(); }
+  redo() { if (this.editing) this.endEdit(); if (this.dropCrop()) return; if (this.history.redo(this.doc)) this.afterHistory(); }
   afterHistory() {
     this.pageIndex = Math.min(this.pageIndex, this.doc.pages.length - 1);
     this.sel = this.sel.filter((id) => this.page.items.some((it) => it.id === id));
@@ -227,6 +300,33 @@ export class Editor {
         this.page.items = arr;
       }
     });
+  }
+  // ---------------------------------------------------------------- cutting the edges of a picture (see crop.js)
+  startCrop(id = this.sel[0]) {
+    const it = this.selectedItems().find((x) => x.id === id);
+    if (!it || it.type !== 'image' || !it.data || it.locked || !(it.w > 0 && it.h > 0)) return;
+    if (this.editing) this.endEdit();
+    this.cropping = { id, st: cropState(it), start: cropState(it) };
+    this.drawSelection(); this.app.panel?.show(); this.app.updateToolbar?.();
+  }
+  // finish cropping: what was cut becomes one undo step
+  endCrop() {
+    const c = this.cropping; if (!c) return;
+    this.cropping = null;
+    const it = this.selectedItems().find((x) => x.id === c.id);
+    if (it && !sameCrop(c.st, c.start)) this.change('crop', () => applyCrop(it, c.st));
+    else { this.drawSelection(); this.app.panel?.show(); }
+  }
+  // undo while cropping: forget this crop (true), or just stop cropping when nothing was cut yet (false)
+  dropCrop() {
+    const c = this.cropping; if (!c) return false;
+    this.cropping = null; this.drawSelection(); this.app.panel?.show();
+    return !sameCrop(c.st, c.start);
+  }
+  resetCrop() {
+    if (this.cropping) this.endCrop();
+    const it = this.selectedItems()[0]; if (it?.type !== 'image' || !it.fx?.cut || it.locked) return;
+    this.change('crop', () => uncrop(it));
   }
   // set a property on every selected item (fill colour, line, picture …)
   setProps(fn, label = 'style') { if (this.sel.length) this.change(label, () => this.selectedItems().forEach((it) => applyDeep(it, fn))); }
@@ -388,6 +488,10 @@ export class Editor {
         this.textStyle({ [key]: !s[key] }); return;
       }
       return; // everything else is typing
+    }
+    if (this.cropping && !['Shift', 'Control', 'Meta', 'Alt'].includes(k)) { // cutting a picture: Esc or Enter finishes
+      if (k === 'Escape' || k === 'Enter') { e.preventDefault(); this.endCrop(); return; }
+      if (!(isMod(e) && /^[zy]$/i.test(k))) this.endCrop();
     }
     if (isMod(e) && k.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); return; }
     if (isMod(e) && k.toLowerCase() === 'y') { e.preventDefault(); this.redo(); return; }

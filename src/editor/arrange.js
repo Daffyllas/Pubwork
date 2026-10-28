@@ -1,6 +1,6 @@
 // Arranging: group and ungroup, line up, spread evenly, flip, turn by a quarter, lock in place.
 // Everything goes through app.editor.change(), so each action is one undo step.
-import { uid, bounds, unionBounds, moveItem, transformItem } from './model.js';
+import { uid, moveItem, transformItem, turnItems, frameOf, frameBox, angleOf, normAngle, drawnBounds } from './model.js';
 import { t } from '../i18n/index.js';
 
 const picked = (app) => app.editor.selectedItems();
@@ -40,10 +40,10 @@ export function ungroup(app) {
 export function align(app, how) {
   const ed = app.editor, items = picked(app); if (!items.length) return;
   const movable = items.filter((it) => !it.locked); if (!movable.length) { app.toast(t('pics.lockedNoMove')); return; }
-  const pg = ed.page, ref = items.length === 1 ? { x: 0, y: 0, w: pg.w, h: pg.h } : unionBounds(items);
+  const pg = ed.page, ref = items.length === 1 ? { x: 0, y: 0, w: pg.w, h: pg.h } : frameBox(frameOf(items)); // (turned things: as drawn)
   ed.change('align', () => {
     for (const it of movable) {
-      const b = bounds(it); let dx = 0, dy = 0;
+      const b = drawnBounds(it); let dx = 0, dy = 0;
       if (how === 'left') dx = ref.x - b.x;
       if (how === 'center') dx = ref.x + ref.w / 2 - (b.x + b.w / 2);
       if (how === 'right') dx = ref.x + ref.w - (b.x + b.w);
@@ -59,7 +59,7 @@ export function align(app, how) {
 export function distribute(app, axis = 'h') {
   const ed = app.editor, items = picked(app); if (items.length < 3) return;
   const X = axis === 'h' ? 'x' : 'y', W = axis === 'h' ? 'w' : 'h';
-  const list = items.map((it) => ({ it, b: bounds(it) })).sort((a, b) => a.b[X] + a.b[W] / 2 - (b.b[X] + b.b[W] / 2));
+  const list = items.map((it) => ({ it, b: drawnBounds(it) })).sort((a, b) => a.b[X] + a.b[W] / 2 - (b.b[X] + b.b[W] / 2));
   const first = list[0].b, last = list[list.length - 1].b;
   const span = last[X] + last[W] - first[X], used = list.reduce((s, e) => s + e.b[W], 0);
   const gap = (span - used) / (list.length - 1);
@@ -75,7 +75,7 @@ export function distribute(app, axis = 'h') {
 // mirror one item around the line x = c (axis 'h') or y = c (axis 'v')
 function flipItem(it, axis, c) {
   const f = axis === 'h' ? ([x, y]) => [2 * c - x, y] : ([x, y]) => [x, 2 * c - y];
-  if (it.type === 'group') { it.items.forEach((k) => flipItem(k, axis, c)); return; }
+  if (it.type === 'group') { it.items.forEach((k) => flipItem(k, axis, c)); if (it.rotate) it.rotate = -it.rotate; return; }
   if (it.type === 'shape') {
     transformItem(it, f, axis === 'h' ? [-1, 1] : [1, -1]);
     if (it.rotate) it.rotate = -it.rotate;
@@ -87,8 +87,9 @@ function flipItem(it, axis, c) {
     if (fx[key]) delete fx[key]; else fx[key] = true;
     if (Object.keys(fx).length) it.fx = fx; else delete it.fx;
     if (it.rotate) it.rotate = -it.rotate;
-  } else { // text and tables keep reading the right way round; only their place is mirrored
-    const b = bounds(it);
+  } else { // text and tables keep reading the right way round; only their place (and turn) is mirrored
+    if (it.rotate) it.rotate = -it.rotate;
+    const b = drawnBounds(it);
     if (axis === 'h') moveItem(it, 2 * c - (b.x + b.w / 2) - (b.x + b.w / 2), 0); else moveItem(it, 0, 2 * c - (b.y + b.h / 2) - (b.y + b.h / 2));
   }
 }
@@ -97,23 +98,23 @@ const flippable = (it) => (it.type === 'group' ? it.items.some(flippable) : it.t
 export function flip(app, axis = 'h') {
   const ed = app.editor, items = picked(app).filter((it) => !it.locked); if (!items.length) return;
   if (!items.some(flippable)) { app.toast(t('pics.noFlipText')); return; }
-  const b = unionBounds(items), c = axis === 'h' ? b.x + b.w / 2 : b.y + b.h / 2;
+  const b = frameBox(frameOf(items)), c = axis === 'h' ? b.x + b.w / 2 : b.y + b.h / 2;
   ed.change('flip', () => items.forEach((it) => flipItem(it, axis, c)));
 }
 
-// turn by 90° (deg = 90 to the left, -90 to the right); several things turn together around their middle
-function turnItem(it, deg, cx, cy) {
-  if (it.type === 'group') { it.items.forEach((k) => turnItem(k, deg, cx, cy)); return; }
-  const b = bounds(it), mx = b.x + b.w / 2, my = b.y + b.h / 2, dx = mx - cx, dy = my - cy;
-  const [nx, ny] = deg > 0 ? [cx + dy, cy - dx] : [cx - dy, cy + dx];
-  moveItem(it, nx - mx, ny - my);
-  let r = ((it.rotate || 0) + deg) % 360; if (r > 180) r -= 360; if (r <= -180) r += 360;
-  if (r) it.rotate = r; else delete it.rotate;
-}
+// turn by deg (90: a quarter to the left, -90: to the right); several things turn together around their middle
 export function rotate(app, deg = 90) {
   const ed = app.editor, items = picked(app).filter((it) => !it.locked); if (!items.length) return;
-  const b = unionBounds(items), cx = b.x + b.w / 2, cy = b.y + b.h / 2;
-  ed.change('turn', () => items.forEach((it) => turnItem(it, deg, cx, cy)));
+  const f = frameOf(items);
+  ed.change('turn', () => turnItems(items, deg, f.cx, f.cy));
+}
+// turn each picked thing to exactly deg (to the left; 0 = upright), around its own middle
+export function setAngle(app, deg) {
+  const ed = app.editor, items = picked(app); if (!items.length) return;
+  if (items.some((it) => it.locked)) { app.toast(t('pics.lockedNoMove')); app.panel?.show(); return; }
+  const want = normAngle(deg);
+  if (items.every((it) => Math.abs(normAngle(angleOf(it) - want)) < 0.01)) return;
+  ed.change('turn', () => items.forEach((it) => { const f = frameOf([it]); turnItems([it], normAngle(want - angleOf(it)), f.cx, f.cy); }));
 }
 
 export function toggleLock(app) {
