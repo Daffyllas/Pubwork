@@ -1,0 +1,14 @@
+{
+  "name": "Pubwork",
+  "url": "https://pubwork.pages.dev",
+  "email": "",
+  "updated": "2026-10-28",
+  "kofi": "",
+  "source": "https://github.com/Daffyllas/pubwork",
+  "umami": "e49738c9-83b0-4246-bebc-b43a7d76b9c2",
+  "ads": {
+    "client": "",
+    "slot": ""
+  },
+  "_note": "url: the site's address (no trailing slash). email: the public contact address; empty leaves the contact lines out. kofi = your Ko-fi page name (ko-fi.com/<name>); empty hides the button. ads.client = your AdSense id (ca-pub-…) and ads.slot = an ad unit id; empty means no ads anywhere. source = the public code repository (shown in the footer and on the terms page); empty hides it. umami = the Umami website id for counting visits and actions; empty turns it off. Ads only ever appear on the information pages, never in the editor."
+}

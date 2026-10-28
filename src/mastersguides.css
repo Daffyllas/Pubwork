@@ -1,0 +1,79 @@
+/* Master pages, layout guides, several open documents and the tour (src/masters.js, layoutguides.js, tour.js, main.js) */
+
+/* the tab strip: one tab for each open document */
+#docTabs{display:flex;align-items:flex-end;gap:2px;padding:4px 10px 0;background:var(--desk);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin;flex:none}
+.dtab{display:flex;align-items:center;max-width:220px;min-width:0;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;background:color-mix(in srgb,var(--panel) 55%,var(--desk));font-size:13.5px}
+.dtab.on{background:var(--panel);box-shadow:inset 0 2px 0 var(--accent)}
+.dtab .dt-open{flex:1;min-width:0;border:0;background:none;padding:6px 4px 6px 12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-weight:600}
+.dtab:not(.on) .dt-open{color:var(--muted);font-weight:500}
+.dtab .dt-dot{color:var(--accent);margin-left:4px}
+.dtab .dt-x{border:0;background:none;cursor:pointer;width:28px;height:28px;border-radius:6px;color:var(--muted);font-size:16px;flex:none}
+.dtab .dt-x:hover,.dtab .dt-open:hover{color:var(--ink)}
+.dtab .dt-x:hover{background:var(--accent-soft)}
+.dtab button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+/* the bar shown while master pages are changed */
+#modeBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#2f6fde;color:#fff;flex:none}
+#modeBar .mb-text{flex:1;min-width:200px;display:flex;flex-direction:column;line-height:1.3}
+#modeBar .mb-text b{font-size:15px}
+#modeBar .mb-text span{font-size:13px;opacity:.9}
+#modeBar .btn{min-height:36px;border-color:rgba(255,255,255,.6);background:transparent;color:#fff}
+#modeBar .btn.primary{background:#fff;color:#1d4fa8;border-color:#fff}
+body.master-mode #desk{background:color-mix(in srgb,#2f6fde 14%,var(--desk))}
+body.master-mode .thumb.on{border-color:#2f6fde}
+
+/* the master pages panel */
+.ms-list{display:flex;flex-direction:column;gap:8px}
+.ms-row{display:flex;gap:12px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:10px}
+.ms-mini{position:relative;flex:none;overflow:hidden;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);border-radius:2px;pointer-events:none}
+.ms-mini .page{position:absolute;left:0;top:0;transform-origin:0 0;margin:0}
+.ms-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ms-info small{color:var(--muted);font-size:13px}
+.ms-acts{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.ms-acts button{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:4px 9px;font-size:13px;cursor:pointer}
+.ms-acts button:hover{border-color:var(--accent)}
+.ms-acts .danger{color:#b42318}
+.ms-rename{font:inherit;font-weight:600;color:var(--ink);background:var(--panel);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;min-height:34px;width:100%}
+.ms-uses{font-size:13.5px;color:var(--muted)}
+
+/* the layout guides panel */
+.pgrid.three{grid-template-columns:1fr 1fr 1fr}
+.lg-row{display:flex;align-items:center;gap:6px;font-size:13.5px}
+.lg-row span{flex:1}
+.lg-row input{width:84px;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:5px 7px}
+
+/* the guides over each page: never printed (they are .pw-ui) */
+.page > .pw-ui.lg{position:absolute;inset:0;pointer-events:none;z-index:48;--lw:calc(1px / var(--z,1))}
+.lg .lg-margin{position:absolute;box-shadow:inset 0 0 0 var(--lw) rgba(229,51,138,.75)}
+.lg .lg-col{position:absolute;background:rgba(47,111,222,.8)}
+.lg .lg-col.v{width:var(--lw)}
+.lg .lg-col.h{height:var(--lw)}
+.lg .lg-base{position:absolute;background-image:linear-gradient(to bottom,rgba(47,111,222,.2) 0,rgba(47,111,222,.2) var(--lw),transparent var(--lw));background-repeat:repeat-y}
+.lg .lg-line{position:absolute;pointer-events:auto;z-index:1}
+.lg .lg-line.v{top:0;bottom:0;width:calc(9px / var(--z,1));margin-left:calc(-4.5px / var(--z,1));cursor:ew-resize}
+.lg .lg-line.h{left:0;right:0;height:calc(9px / var(--z,1));margin-top:calc(-4.5px / var(--z,1));cursor:ns-resize}
+.lg .lg-line::after{content:"";position:absolute;background:#12a37a}
+.lg .lg-line.v::after{left:50%;top:0;bottom:0;width:var(--lw)}
+.lg .lg-line.h::after{top:50%;left:0;right:0;height:var(--lw)}
+.lg .lg-line:hover::after,.lg .lg-line.dragging::after{background:#0b7a5a;box-shadow:0 0 0 var(--lw) rgba(18,163,122,.35)}
+.lg .lg-line.off::after{background:#b42318;opacity:.5}
+.thumb .pw-ui,.bmini .pw-ui,.ms-mini .pw-ui{display:none}
+
+/* the tour */
+.tour-catch{position:fixed;inset:0;z-index:60}
+.tour-catch.dim{background:rgba(0,0,0,.45)}
+.tour-hole{position:fixed;z-index:61;border-radius:10px;box-shadow:0 0 0 3px var(--accent),0 0 0 9999px rgba(0,0,0,.45);pointer-events:none;transition:left .2s,top .2s,width .2s,height .2s}
+.tour-bubble{position:fixed;z-index:62;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.tour-bubble h3{margin:2px 0 6px;font-size:17px}
+.tour-bubble p{margin:0 0 14px;font-size:15px;line-height:1.45}
+.tour-count{color:var(--muted);font-size:12.5px}
+.tour-acts{display:flex;align-items:center;gap:6px}
+.tour-acts .btn{min-height:38px;padding:0 12px}
+.tour-acts .spacer{flex:1}
+.tour-link{margin:10px 0 0}
+.tour-link button{border:0;background:none;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:4px 2px;font-size:14px}
+.tour-offer{display:flex;align-items:center;gap:2px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:999px;padding:2px 2px 2px 4px;font-size:13.5px;z-index:30}
+.tour-offer button{border:0;background:none;cursor:pointer;color:var(--ink);font-weight:600;padding:5px 8px;border-radius:999px}
+.tour-offer .tour-no{width:28px;padding:5px 0;color:var(--muted);font-size:16px}
+.tour-offer button:hover{background:color-mix(in srgb,var(--accent) 15%,transparent)}
+@media (max-width:640px){.tour-offer{position:fixed;left:12px;right:12px;bottom:16px;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,.2);background:var(--panel)}}

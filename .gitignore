@@ -1,0 +1,27 @@
+node_modules/
+dist/
+
+# pages made by tools/make-pages.mjs (npm run build makes them again)
+/*/
+!/src/
+!/site/
+!/public/
+!/tools/
+!/tests/
+/index.html
+/site/pages.json
+/public/sitemap.xml
+/public/robots.txt
+/public/pdffonts/
+
+# sources fetched by tools/reader/fetch.sh, and build output
+tools/reader/dl/
+tools/reader/libmspub/
+tools/reader/librevenge-0.0.5/
+tools/reader/zlib/
+tools/reader/boostx/
+tools/reader/obj/
+tools/reader/out/
+
+# test files (fetched by tools/fetch-test-files.sh)
+tests/

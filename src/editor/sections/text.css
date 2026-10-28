@@ -1,0 +1,25 @@
+/* the "more text settings" part of the settings panel */
+#side .tx-more{margin:14px 0 4px;border-top:1px solid var(--line);padding-top:10px}
+#side .tx-more summary{cursor:pointer;font-weight:600;font-size:14px;padding:4px 0;color:var(--ink)}
+#side .tx-more h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+#side .tx-more .prow{margin:6px 0}
+#side .tx-more .check{display:flex;margin:6px 0}
+#side .tx-more select{max-width:150px}
+#side .tx-more #txTrack{width:62px}
+#side .tx-toggles{display:flex;flex-wrap:wrap;gap:6px}
+#side .tx-linkrow{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+#side .tx-linkrow input{width:100%}
+#side .tx-tabs{margin:10px 0}
+#side .tx-tabhead{font-size:14px;margin-bottom:4px}
+#side .tx-tab{display:grid;grid-template-columns:62px 1fr 1fr auto;gap:4px;align-items:center;margin:4px 0}
+#side .tx-tab input,#side .tx-tab select{width:100%;min-width:0}
+#side .tx-tab .pbtn{min-width:30px;min-height:30px}
+.panel.styles-panel .st-list{display:flex;flex-direction:column;gap:6px;max-height:min(50vh,420px);overflow:auto}
+.panel.styles-panel .st-row{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:stretch}
+.panel.styles-panel .st-use{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 10px;cursor:pointer;color:var(--ink);overflow:hidden}
+.panel.styles-panel .st-use:hover{border-color:var(--accent)}
+.panel.styles-panel .st-use.on{border-color:var(--accent);background:var(--accent-soft)}
+.panel.styles-panel .st-name{display:block;font:600 12px/1.3 system-ui,sans-serif;color:var(--muted);margin-bottom:2px}
+.panel.styles-panel .st-prev{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;max-height:40px}
+.panel.styles-panel .st-new{display:flex;gap:6px}
+.panel.styles-panel .st-new input{flex:1;min-width:0}

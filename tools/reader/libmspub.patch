@@ -1,0 +1,243 @@
+diff --git a/src/lib/EscherFieldIds.h b/src/lib/EscherFieldIds.h
+index 6245ea4..2b76146 100644
+--- a/src/lib/EscherFieldIds.h
++++ b/src/lib/EscherFieldIds.h
+@@ -67,6 +67,9 @@
+ #define FIELDID_LINE_DASHING           0x01CE
+ #define FIELDID_LINE_ENDCAP_STYLE      0x01D7
+ #define FIELDID_NUM_COLUMNS            0x008C
++#define FIELDID_GTEXT_UNICODE          0xC0C0
++#define FIELDID_GTEXT_FONT             0xC0C5
++#define FIELDID_GTEXT_BOOL_PROPS       0x00FF
+ #define FIELDID_COLUMN_SPACING         0x008D
+ #define FIELDID_BEGIN_ARROW_STYLE      0x01D0
+ #define FIELDID_BEGIN_ARROW_WIDTH      0x01D2
+diff --git a/src/lib/Fill.cpp b/src/lib/Fill.cpp
+index ccb3d42..d800a4d 100644
+--- a/src/lib/Fill.cpp
++++ b/src/lib/Fill.cpp
+@@ -131,6 +131,18 @@ void GradientFill::completeComplexFill()
+   }
+ }
+ 
++// Publisher often stores only the middle stops of a gradient in the shade array; the two ends are the
++// shape's fill and back colours. Without them a gradient comes out as one flat colour.
++void GradientFill::ensureEnds(ColorReference startColor, double startOpacity, ColorReference endColor, double endOpacity)
++{
++  if (m_stops.empty())
++    return;
++  if (m_stops.front().m_offsetPercent > 0)
++    m_stops.insert(m_stops.begin(), StopInfo(startColor, 0, startOpacity));
++  if (m_stops.back().m_offsetPercent < 100)
++    m_stops.push_back(StopInfo(endColor, 100, endOpacity));
++}
++
+ void GradientFill::getProperties(librevenge::RVNGPropertyList *out) const
+ {
+   librevenge::RVNGPropertyListVector ret;
+diff --git a/src/lib/Fill.h b/src/lib/Fill.h
+index 39c5cab..b801633 100644
+--- a/src/lib/Fill.h
++++ b/src/lib/Fill.h
+@@ -94,6 +94,7 @@ public:
+   void addColor(ColorReference c, unsigned offsetPercent, double opacity);
+   void addColorReverse(ColorReference c, unsigned offsetPercent, double opacity);
+   void completeComplexFill();
++  void ensureEnds(ColorReference startColor, double startOpacity, ColorReference endColor, double endOpacity);
+   void getProperties(librevenge::RVNGPropertyList *out) const override;
+ private:
+   GradientFill(const GradientFill &) : Fill(nullptr), m_stops(), m_angle(0), m_type(7), m_fillLeftVal(0.0), m_fillTopVal(0.0), m_fillRightVal(0.0), m_fillBottomVal(0.0) { }
+diff --git a/src/lib/MSPUBCollector.cpp b/src/lib/MSPUBCollector.cpp
+index e5c2fd1..332f13d 100644
+--- a/src/lib/MSPUBCollector.cpp
++++ b/src/lib/MSPUBCollector.cpp
+@@ -358,6 +358,12 @@ void MSPUBCollector::addEOTFont(const librevenge::RVNGString &name, const librev
+   m_embeddedFonts.push_back(EmbeddedFontInfo(name, data));
+ }
+ 
++void MSPUBCollector::setShapeWordArt(unsigned seqNum, const std::string &text, const std::string &font, unsigned flags)
++{
++  ShapeInfo &info = m_shapeInfosBySeqNum[seqNum];
++  info.m_wordArtText = text; info.m_wordArtFont = font; info.m_wordArtFlags = flags;
++}
++
+ void MSPUBCollector::setShapePictureRecolor(unsigned seqNum,
+                                             const ColorReference &recolor)
+ {
+@@ -703,6 +709,15 @@ std::function<void(void)> MSPUBCollector::paintShape(const ShapeInfo &info, cons
+   if (info.m_fill)
+   {
+     info.m_fill->getProperties(&graphicsProps);
++    // the shape's own rotation and flips, so a gradient can turn with its shape
++    if (graphicsProps["draw:fill"] && graphicsProps["draw:fill"]->getStr() == "gradient")
++    {
++      if (bool(info.m_rotation))
++        graphicsProps.insert("libmspub:rotate", (double)info.m_rotation.get(), librevenge::RVNG_GENERIC);
++      std::pair<bool, bool> flips = info.m_flips.get_value_or(std::pair<bool, bool>(false, false));
++      if (flips.first) graphicsProps.insert("libmspub:flip-v", true);
++      if (flips.second) graphicsProps.insert("libmspub:flip-h", true);
++    }
+   }
+   bool hasStroke = false;
+   bool hasBorderArt = false;
+@@ -807,6 +822,14 @@ std::function<void(void)> MSPUBCollector::paintShape(const ShapeInfo &info, cons
+       // TODO: Emulate shadows that don't conform
+       // to LibreOffice's range of possible shadows.
+     }
++    if (!info.m_wordArtText.empty())
++    {
++      // Pubwork draws the words itself; the shape here is only the outline Publisher would bend them into
++      graphicsProps.insert("pubwork:wordart-text", info.m_wordArtText.c_str());
++      graphicsProps.insert("pubwork:wordart-font", info.m_wordArtFont.c_str());
++      graphicsProps.insert("pubwork:wordart-type", static_cast<int>(type));
++      graphicsProps.insert("pubwork:wordart-flags", static_cast<int>(info.m_wordArtFlags));
++    }
+     m_painter->setStyle(graphicsProps);
+ 
+     writeCustomShape(type, graphicsProps, m_painter, x, y, height, width,
+@@ -1221,6 +1244,14 @@ std::function<void(void)> MSPUBCollector::paintShape(const ShapeInfo &info, cons
+         if (ngap > 0)
+           props.insert("fo:column-gap", (double)ngap / EMUS_IN_INCH);
+       }
++      if (bool(info.m_textId))
++      {
++        // Pubwork: say which story this box shows and where in it the box starts, so linked boxes can flow
++        props.insert("librevenge:pub-text-id", (int)get(info.m_textId));
++        const std::map<unsigned, unsigned>::const_iterator off = m_stringOffsetsByTextId.find(get(info.m_textId));
++        if (off != m_stringOffsetsByTextId.end())
++          props.insert("librevenge:pub-text-offset", (int)off->second);
++      }
+       m_painter->startTextObject(props);
+       for (const auto &line : text)
+       {
+diff --git a/src/lib/MSPUBCollector.h b/src/lib/MSPUBCollector.h
+index eb7f05a..190379d 100644
+--- a/src/lib/MSPUBCollector.h
++++ b/src/lib/MSPUBCollector.h
+@@ -70,6 +70,7 @@ public:
+   void setShapeType(unsigned seqNum, unsigned type);
+   void setShapeCropType(unsigned seqNum, unsigned cropType);
+   void setShapePictureRecolor(unsigned seqNum, const ColorReference &recolor);
++  void setShapeWordArt(unsigned seqNum, const std::string &text, const std::string &font, unsigned flags);
+   void setShapePictureBrightness(unsigned seqNum, int brightness);
+   void setShapePictureContrast(unsigned seqNum, int contrast);
+   void setShapeTableInfo(unsigned seqNum, const TableInfo &ti);
+diff --git a/src/lib/MSPUBParser.cpp b/src/lib/MSPUBParser.cpp
+index 56c4304..3d09a50 100644
+--- a/src/lib/MSPUBParser.cpp
++++ b/src/lib/MSPUBParser.cpp
+@@ -256,7 +256,14 @@ bool MSPUBParser::parse()
+   if (!m_input->isStructured())
+     return false;
+   // No check: metadata are not important enough to fail if they can't be parsed
+-  parseMetaData();
++  try
++  {
++    parseMetaData();
++  }
++  catch (...)
++  {
++    MSPUB_DEBUG_MSG(("Could not read the document properties; going on without them.\n"));
++  }
+   std::unique_ptr<librevenge::RVNGInputStream> quill(m_input->getSubStreamByName("Quill/QuillSub/CONTENTS"));
+   if (!quill)
+   {
+@@ -1997,6 +2004,38 @@ void MSPUBParser::parseEscherShape(librevenge::RVNGInputStream *input, const Esc
+             }
+           }
+ 
++          {
++            // old-style WordArt: its words are in the shape's properties
++            const std::vector<unsigned char> &gtext = foptValues.m_complexValues[FIELDID_GTEXT_UNICODE];
++            if (gtext.size() >= 2)
++            {
++              const std::vector<unsigned char> &gfont = foptValues.m_complexValues[FIELDID_GTEXT_FONT];
++              unsigned *gflags = getIfExists(foptValues.m_scalarValues, FIELDID_GTEXT_BOOL_PROPS);
++              auto utf8 = [](const std::vector<unsigned char> &b)
++              {
++                std::string o;
++                for (size_t i = 0; i + 1 < b.size(); i += 2)
++                {
++                  unsigned c = b[i] | (b[i + 1] << 8);
++                  if (!c) break;
++                  if (c >= 0xD800 && c < 0xDC00 && i + 3 < b.size())
++                  {
++                    unsigned d = b[i + 2] | (b[i + 3] << 8);
++                    if (d >= 0xDC00 && d < 0xE000) { c = 0x10000 + ((c - 0xD800) << 10) + (d - 0xDC00); i += 2; }
++                  }
++                  if (c == 0x0D) { o += '\n'; continue; }
++                  if (c < 0x80) o += char(c);
++                  else if (c < 0x800) { o += char(0xC0 | (c >> 6)); o += char(0x80 | (c & 0x3F)); }
++                  else if (c < 0x10000) { o += char(0xE0 | (c >> 12)); o += char(0x80 | ((c >> 6) & 0x3F)); o += char(0x80 | (c & 0x3F)); }
++                  else { o += char(0xF0 | (c >> 18)); o += char(0x80 | ((c >> 12) & 0x3F)); o += char(0x80 | ((c >> 6) & 0x3F)); o += char(0x80 | (c & 0x3F)); }
++                }
++                return o;
++              };
++              std::string words = utf8(gtext);
++              if (!words.empty())
++                m_collector->setShapeWordArt(*shapeSeqNum, words, utf8(gfont), gflags ? *gflags : 0);
++            }
++          }
+           const std::vector<unsigned char> vertexData = foptValues.m_complexValues[FIELDID_P_VERTICES];
+           if (!vertexData.empty())
+           {
+@@ -2175,6 +2214,16 @@ std::shared_ptr<Fill> MSPUBParser::getNewFill(const std::map<unsigned short, uns
+         }
+         if ((fillFocus < 0) || ((fillFocus > 0) && (fillFocus < 100)))
+           ret->completeComplexFill();
++        const double op1 = ptr_fillOpacity ? (double)(*ptr_fillOpacity) / 0xFFFF : 1;
++        const double op2 = ptr_fillBackOpacity ? (double)(*ptr_fillBackOpacity) / 0xFFFF : 1;
++        if (fillFocus == 0)
++          ret->ensureEnds(firstColor, op1, secondColor, op2);
++        else if (fillFocus == 100)
++          ret->ensureEnds(secondColor, op2, firstColor, op1);
++        else if (fillFocus > 0)
++          ret->ensureEnds(secondColor, op2, secondColor, op2);
++        else
++          ret->ensureEnds(firstColor, op1, firstColor, op1);
+       }
+     }
+     else
+@@ -2434,6 +2483,13 @@ FOPTValues MSPUBParser::extractFOPTValues(librevenge::RVNGInputStream *input, co
+     {
+       continue;
+     }
++    // text properties (WordArt words, font and picture names) are plain UTF-16, exactly `length` bytes
++    const unsigned short pid = id & 0x3FFF;
++    if (pid == 0x00C0 || pid == 0x00C1 || pid == 0x00C5 || pid == 0x0105 || pid == 0x0106 || pid == 0x0187 || pid == 0x01C7 || pid == 0x0380 || pid == 0x0381 || pid == 0x038D)
++    {
++      readNBytes(input, length, ret.m_complexValues[id]);
++      continue;
++    }
+     unsigned short numEntries = readU16(input);
+     input->seek(2, librevenge::RVNG_SEEK_CUR);
+     unsigned short entryLength = readU16(input);
+diff --git a/src/lib/ShapeInfo.h b/src/lib/ShapeInfo.h
+index d69628d..c0a4d83 100644
+--- a/src/lib/ShapeInfo.h
++++ b/src/lib/ShapeInfo.h
+@@ -67,6 +67,9 @@ struct ShapeInfo
+   std::vector<libmspub::Vertex> m_clipPath;
+   boost::optional<int> m_pictureBrightness;
+   boost::optional<int> m_pictureContrast;
++  // old-style WordArt (Pubwork): the words, font name and bold/italic flags of a text effect shape
++  std::string m_wordArtText, m_wordArtFont;
++  unsigned m_wordArtFlags = 0;
+   ShapeInfo() : m_type(), m_cropType(), m_imgIndex(), m_borderImgIndex(),
+     m_coordinates(), m_lines(), m_pageSeqNum(),
+     m_textId(), m_adjustValuesByIndex(), m_adjustValues(),
+diff --git a/src/lib/libmspub_utils.cpp b/src/lib/libmspub_utils.cpp
+index 64c93a7..c2ff59f 100644
+--- a/src/lib/libmspub_utils.cpp
++++ b/src/lib/libmspub_utils.cpp
+@@ -66,6 +66,10 @@ const char *windowsCharsetNameByOriginalCharset(const char *name)
+   {
+     return "windows-1256";
+   }
++  if (strncmp(name, "windows-", 8) == 0)
++  {
++    return name;
++  }
+   return nullptr;
+ }
+ 

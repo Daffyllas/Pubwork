@@ -1,0 +1,27 @@
+/* mail merge: choosing records, photo and e-mail parts */
+.mfilter{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:14px}
+.mfilter select,.mfilter input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-height:36px;min-width:0;flex:1 1 110px}
+.mfilter span{flex:none}
+.mrecords{max-height:210px}
+.mrecords td,.mrecords th{cursor:default}
+.mrecords tr[data-row]{cursor:pointer}
+.mrecords tr[data-row]:hover td{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.mrecords tr.out td{color:var(--muted);text-decoration:line-through;opacity:.6;cursor:default}
+.mrecords tr.cur td{background:var(--accent-soft);font-weight:600}
+.mrecords .mtick{width:28px;text-align:center;padding:2px 4px}
+.mrecords .mtick input{width:17px;height:17px;margin:0;cursor:pointer}
+.mrecords .mnum{color:var(--muted);font-variant-numeric:tabular-nums;width:24px}
+.mticks .btn{min-height:32px;padding:0 10px;font-size:13.5px}
+.mcount{margin-left:auto;font-size:13.5px;font-weight:600}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.mpart{border:1px solid var(--line);border-radius:10px;padding:0 12px}
+.mpart summary{cursor:pointer;font-weight:700;font-size:14.5px;padding:10px 0;list-style-position:inside}
+.mpart[open] summary{border-bottom:1px solid var(--line);margin-bottom:8px}
+.mpart-in{display:flex;flex-direction:column;gap:8px;padding-bottom:12px}
+.mpart-in .hint,.mpart-in .checkline{margin:0}
+.msteps{margin:0;padding-left:20px;font-size:14px;display:grid;gap:3px}
+.mframes{margin:0;padding-left:18px;font-size:14px}
+.chips.mini button{padding:3px 9px;font-size:12.5px;font-family:Georgia,serif}
+.mhow{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.mhow ol{margin:6px 0;padding-left:20px;display:grid;gap:4px}
+.mhow .hint{margin:4px 0 0}

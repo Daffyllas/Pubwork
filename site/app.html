@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en"<!--HTMLATTR-->>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pubwork</title>
+<meta name="description" content="Open Microsoft Publisher (.pub) files in your browser, free. Nothing is uploaded.">
+<!--HEAD-->
+<style>
+:root{
+  --bg:#f6f2ee;--panel:#ffffff;--ink:#221d1a;--muted:#6b625c;--line:#e2dbd4;--accent:#b34816;--accent-ink:#ffffff;--accent-soft:#fbe9df;--warn:#7a6f2a;--desk:#e9e3dc;
+  --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Open Sans",sans-serif;--radius:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1614;--panel:#23201d;--ink:#ece7e3;--muted:#a39a93;--line:#3a332e;--accent:#f0874d;--accent-ink:#16181b;--accent-soft:#3b2519;--warn:#cbbf73;--desk:#12100f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1614;--panel:#23201d;--ink:#ece7e3;--muted:#a39a93;--line:#3a332e;--accent:#f0874d;--accent-ink:#16181b;--accent-soft:#3b2519;--warn:#cbbf73;--desk:#12100f;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--ui);display:flex;flex-direction:column}
+button{font:inherit;color:inherit}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-weight:600}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn svg{width:20px;height:20px}
+header{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;letter-spacing:-.01em;margin-right:6px}
+#fname{color:var(--muted);font-size:14px;max-width:32ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid transparent;background:none;border-radius:6px;padding:4px 6px;cursor:text}
+#fname:hover{border-color:var(--line)}
+#fnameInput{font:inherit;font-size:14px;border:1px solid var(--accent);border-radius:6px;padding:4px 6px;width:24ch;color:var(--ink);background:var(--panel)}
+.spacer{flex:1}
+.zoom{display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:8px;padding:2px}
+.zoom button{width:36px;height:34px;border:0;background:none;border-radius:6px;cursor:pointer;font-size:18px}
+.zoom button:hover{background:var(--accent-soft)}
+#zoomPct{min-width:56px;text-align:center;font-variant-numeric:tabular-nums;font-size:14px}
+main{flex:1;display:flex;min-height:0}
+#thumbs{width:150px;flex:none;overflow:auto;padding:12px 10px;border-right:1px solid var(--line);background:var(--panel)}
+.thumb{display:block;width:100%;margin:0 0 14px;padding:0;border:2px solid transparent;border-radius:6px;background:none;cursor:pointer;text-align:center;font-size:12px;color:var(--muted)}
+.thumb.on{border-color:var(--accent)}
+.thumb .mini{position:relative;margin:0 auto 4px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.18);overflow:hidden;pointer-events:none}
+.thumb .mini .page{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:none;margin:0}
+#desk{flex:1;overflow:auto;background:var(--desk);position:relative;isolation:isolate} /* selection frames stay under menus, panels and dialogs */
+#pages{padding:28px;display:flex;flex-direction:column;align-items:center;gap:28px;width:max-content;min-width:100%}
+.page{position:relative;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18);overflow:hidden;color:#000;flex:none}
+.page .it{position:absolute;margin:0}
+.page svg.shape{overflow:visible;pointer-events:none}
+.page svg.shape > :not(defs){pointer-events:visiblePainted}
+.page .pic img{display:block;width:100%;height:100%;object-fit:fill}
+.page .pic.placeholder{display:grid;place-items:center;background:repeating-linear-gradient(135deg,#efede9 0 9pt,#e6e3de 9pt 18pt);outline:1.2pt dashed #a39a93;outline-offset:-1.2pt;color:#5d554f;font:600 10pt/1.3 system-ui,sans-serif;text-align:center;padding:6pt;overflow:hidden}
+.page .pic.placeholder.round{border-radius:50%}
+.page .pic.placeholder.small span{font-size:0}.page .pic.placeholder.small span::before{margin:0 auto}
+.page .pic.placeholder span{max-width:16em}
+.page .pic.placeholder span::before{content:"";display:block;width:22pt;height:22pt;margin:0 auto 4pt;opacity:.7;background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235d554f' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8h3l2-3h6l2 3h3v11H4z'/%3E%3Ccircle cx='12' cy='13' r='3.5'/%3E%3C/svg%3E")}
+.page .pic.missing{display:grid;place-items:center;background:repeating-linear-gradient(45deg,#f2f2f2 0 6px,#e7e7e7 6px 12px);color:#888;font-size:20px}
+.page .text{display:flex;flex-direction:column;overflow:hidden;font-family:"Times New Roman","Tinos",serif;font-size:10pt;line-height:normal;word-wrap:break-word;overflow-wrap:break-word;tab-size:4;white-space:pre-wrap}
+.page .text[data-valign="middle"]{justify-content:center}
+.page .text[data-valign="bottom"]{justify-content:flex-end}
+.page .para{margin:0;min-height:1em}
+.page .flow{flex:none;min-height:0}
+.page .table table{border-collapse:collapse;width:100%;height:100%;table-layout:fixed;font-size:10pt}
+.page .table td{padding:2pt 4pt;white-space:pre-wrap}
+#side{width:290px;flex:none;overflow:auto;padding:16px;border-left:1px solid var(--line);background:var(--panel)}
+#side h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 8px}
+#side h2:first-child{margin-top:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.fontrow{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.fontrow small{grid-column:1/-1;color:var(--muted)}
+.badge{align-self:start;font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;white-space:nowrap}
+.badge.warn{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
+.notes li{margin:4px 0;font-size:13.5px}
+#start{position:absolute;inset:0;overflow:auto;background:var(--bg)}
+.start-inner{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:48px;padding:32px 16px}
+.start-inner:has(.seo){justify-content:flex-start}
+.seo{max-width:820px;width:100%;display:flex;flex-direction:column;gap:40px;color:var(--ink)}
+.seo h2{font-size:22px;margin:0 0 14px;letter-spacing:-.01em;text-wrap:balance}
+.seo p{margin:0}
+.seo .intro p{max-width:68ch;font-size:16.5px;line-height:1.6}
+.ad-wrap{min-height:120px}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;counter-reset:s}
+.steps li{counter-increment:s;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;font-size:14px}
+.steps b,.why b{font-size:16px}
+.steps span,.why span{color:var(--muted);font-size:14.5px}
+.why{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px}
+.why div{display:flex;flex-direction:column;gap:4px;border-top:3px solid var(--accent);padding-top:10px}
+.faq details{border-bottom:1px solid var(--line);padding:12px 0}
+.faq summary{cursor:pointer;font-weight:700;font-size:16px;list-style-position:inside}
+.faq details p{color:var(--muted);margin-top:8px;max-width:65ch}
+.links{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0;padding:0;list-style:none}
+.links a{color:var(--accent);font-weight:600;text-underline-offset:3px}
+.links a[aria-current]{color:var(--ink);text-decoration:none}
+.sitefoot{border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:13.5px;display:flex;flex-direction:column;gap:10px}
+#start[hidden]{display:none}
+.card{max-width:620px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:32px;box-shadow:0 10px 40px rgba(0,0,0,.06)}
+.card h1{font-size:clamp(26px,4vw,34px);line-height:1.15;margin:0 0 10px;letter-spacing:-.015em}
+.card p.lede{color:var(--muted);font-size:17px;margin:0 0 22px}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:30px 20px;text-align:center;transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop .big{font-size:18px;font-weight:700;margin:8px 0 14px}
+.drop .btn{min-height:52px;font-size:17px;padding:0 26px}
+.samples{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px;color:var(--muted);font-size:14px}
+.samples button{border:0;background:none;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:4px 2px}
+.btn:focus-visible,.samples button:focus-visible,.zoom button:focus-visible,.thumb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.privacy{display:flex;gap:10px;align-items:flex-start;margin-top:18px;color:var(--muted);font-size:14px}
+.privacy svg{flex:none;margin-top:2px}
+#busy{position:fixed;inset:0;display:grid;place-items:center;background:color-mix(in srgb,var(--bg) 70%,transparent);z-index:40}
+#busy[hidden]{display:none}
+#busy .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 22px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.spin{width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toast{overflow-wrap:anywhere;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:10px;max-width:min(560px,92vw);z-index:30;font-size:14.5px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#toast[hidden]{display:none}
+.panel{position:fixed;top:62px;right:14px;width:min(380px,calc(100vw - 28px));max-height:calc(100% - 80px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.18);padding:18px;z-index:25;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-size:17px;margin:0}
+.panel fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.panel legend{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;padding:0}
+.choice{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.choice:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.choice input{margin:3px 0 0;accent-color:var(--accent);width:18px;height:18px}
+.choice .t{font-weight:700}
+.choice .d{grid-column:2;color:var(--muted);font-size:13.5px}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+.row .choice{grid-template-columns:auto auto;padding:8px 12px}
+.panel .actions{display:flex;justify-content:flex-end;gap:8px}
+.panel .hint{font-size:13px;color:var(--muted);margin:0}
+@media (max-width:640px){.panel{top:auto;bottom:0;right:0;left:0;width:auto;border-radius:16px 16px 0 0;max-height:85%;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))}}
+.convert-note{margin:14px 0 0;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--ink);font-weight:600}
+.langpick{display:flex;align-items:center;gap:8px;margin-top:16px;color:var(--muted);font-size:14px}
+.langpick select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+
+/* editor */
+#tools{display:flex;align-items:center;gap:4px;padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tool{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:58px;min-height:52px;padding:4px 8px;border:1px solid transparent;border-radius:8px;background:none;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink)}
+.tool svg{width:22px;height:22px}
+.tool:hover:not(:disabled){background:var(--accent-soft)}
+.tool:disabled{opacity:.35;cursor:default}
+.tool[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.tsep{width:1px;align-self:stretch;margin:6px 6px;background:var(--line)}
+.menu{position:fixed;z-index:26;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.16);padding:6px;display:flex;flex-direction:column;min-width:170px}
+.menu button{display:flex;align-items:center;gap:10px;padding:9px 10px;border:0;background:none;border-radius:6px;cursor:pointer;text-align:left;font-weight:600}
+.menu button:hover,.menu button:focus-visible{background:var(--accent-soft)}
+.menu svg{width:22px;height:22px}
+.more-menu{max-height:calc(100vh - 140px);overflow:auto;min-width:230px}
+.menu-lab{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px 2px}
+.page .pw-ui.sel{position:absolute;border:1.5px solid var(--accent);pointer-events:none;z-index:50;box-sizing:content-box;margin:-1.5px 0 0 -1.5px}
+.page .pw-ui.sel.typing{border-style:dashed}
+.page .pw-ui.handle{position:absolute;width:11px;height:11px;margin:-6px 0 0 -6px;background:#fff;border:1.5px solid var(--accent);border-radius:2px;pointer-events:auto;zoom:calc(1 / var(--z, 1))}
+.h-nw{left:0;top:0;cursor:nwse-resize}.h-n{left:50%;top:0;cursor:ns-resize}.h-ne{left:100%;top:0;cursor:nesw-resize}.h-e{left:100%;top:50%;cursor:ew-resize}
+.h-se{left:100%;top:100%;cursor:nwse-resize}.h-s{left:50%;top:100%;cursor:ns-resize}.h-sw{left:0;top:100%;cursor:nesw-resize}.h-w{left:0;top:50%;cursor:ew-resize}
+.page .pw-ui.guide{position:absolute;z-index:49;pointer-events:none;background:#e5338a}
+.page .pw-ui.guide.v{top:0;bottom:0;width:1px}
+.page .pw-ui.guide.h{left:0;right:0;height:1px}
+.has-doc #pages .page > .it{cursor:move}
+.has-doc #pages .page > .it.from-master{pointer-events:none}
+#pages .page > svg.wordart{pointer-events:bounding-box}
+.has-doc #pages .page > .it.editing{cursor:text}
+.page .it.editing{outline:none}
+.page .it.editing [contenteditable]{outline:none;cursor:text;user-select:text}
+.page .text.overflow::after{content:"…";position:absolute;right:2px;bottom:2px;min-width:16px;height:14px;border-radius:3px;background:#e5338a;color:#fff;font:700 11px/12px system-ui;text-align:center;display:none}
+.has-doc .page .text.overflow::after{display:block}
+.pagebar{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:-6px 0 14px}
+.pagebar button{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:3px 7px;font-size:12px;cursor:pointer}
+.pagebar button:hover{border-color:var(--accent)}
+.addpage{width:100%;min-height:40px;border:2px dashed var(--line);border-radius:8px;background:none;cursor:pointer;font-weight:600;color:var(--muted)}
+.addpage:hover{border-color:var(--accent);color:var(--accent)}
+.prow{display:flex;align-items:center;gap:6px;margin:6px 0;flex-wrap:wrap}
+.prow select,.prow input[type=number],.pgrid input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-height:36px}
+.styles-panel .st-new input,#side .tx-linkrow input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-height:36px;box-sizing:border-box}
+.prow select{flex:1;min-width:0}
+#pSize{width:76px}
+.pbtn{min-width:36px;min-height:36px;border:1px solid var(--line);background:var(--panel);border-radius:7px;cursor:pointer;display:inline-grid;place-items:center;font-size:15px}
+.pbtn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.pbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.pbtn.wide{padding:0 10px;font-size:13.5px}
+.prow .gap{width:8px}
+.swatch{position:relative;display:inline-grid;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:7px;cursor:pointer;font-weight:800}
+.swatch input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.swatch span{border-bottom:4px solid #000;line-height:1.1;padding:0 3px}
+.field{display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.field input[type=color]{width:40px;height:32px;padding:0;border:1px solid var(--line);border-radius:6px;background:none}
+.field input[type=number]{width:70px}
+.check{display:inline-flex;align-items:center;gap:6px;font-size:14px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pgrid label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted)}
+.pgrid input{width:100%}
+.prow.wrap .btn{min-height:36px;padding:0 10px;font-size:14px}
+.btn.danger{color:#b42318}
+#side .hint{font-size:13px;color:var(--muted);margin:6px 0}
+.newrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.newrow .btn{min-height:44px}
+.newmore{max-width:100%;font:inherit;font-weight:600;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:0 10px;min-height:44px;cursor:pointer}
+.paper{display:inline-block;border:1.5px solid currentColor;border-radius:2px}
+.recent{margin-top:18px}
+.recent h2{font-size:15px;margin:0 0 8px}
+.recent ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.recent li{display:flex;align-items:center;gap:8px}
+.recent .open{flex:1;display:flex;justify-content:space-between;gap:10px;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 12px;cursor:pointer;font-weight:600;min-width:0}
+.recent .open:hover{border-color:var(--accent)}
+.recent .open span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recent .open small{color:var(--muted);font-weight:400;white-space:nowrap}
+.recent .forget{border:0;background:none;color:var(--muted);cursor:pointer;font-size:18px;width:32px;height:32px;border-radius:6px}
+.recent .forget:hover{background:var(--accent-soft)}
+.divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin:18px 0 4px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+@media (max-width:640px){header{gap:6px;padding:6px 10px}#bSave span,#bKeep span{display:none}#bSave,#bKeep,#bOpen{padding:0 10px}#tools{flex-wrap:nowrap;overflow-x:auto;gap:0}.tool{min-width:52px;padding:4px 4px;font-size:10.5px}#tUndo,#tRedo{min-width:40px}#tUndo span,#tRedo span{display:none}.tsep{margin:6px 2px}}
+.hide-sm{}
+@media (max-width:900px){#side{display:none}body.has-sel #side:not([hidden]){display:block;position:fixed;left:0;right:0;bottom:0;width:auto;max-height:42%;z-index:20;border-left:0;border-top:1px solid var(--line);border-radius:14px 14px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.15);padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}body.has-sel #desk{padding-bottom:42vh}}
+@media (max-width:640px){#zoomBox,#fname{display:none!important}#thumbs{display:none}.hide-sm{display:none}#pages{padding:14px;gap:14px}.card{padding:22px}}
+
+/* print */
+.panel.wide{width:min(760px,calc(100vw - 28px))}
+@media (max-width:640px){.panel.wide{width:auto}} /* on a phone a wide panel is a bottom sheet like the others */
+.batch{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.batch-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.batch .hint{font-size:13.5px;color:var(--muted)}
+.maker{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:4px 0 18px}
+.btn.big{font-size:17px;padding:12px 22px;min-height:48px}
+.maker .hint{font-size:14px;color:var(--muted);margin:0}
+.support-line{margin:10px 0 0;font-size:13.5px}
+.support-line a{color:var(--muted);text-underline-offset:3px}
+.support-line a::before{content:"\2665  ";color:var(--accent)}
+.ad-slot{min-height:120px;display:block;margin:4px 0}
+.pgrid select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-height:36px;width:100%}
+.pgrid label.wide{grid-column:1/-1}
+#calPanel{z-index:30}
+#calPanel .actions{position:sticky;bottom:-18px;margin:0 -18px -18px;padding:12px 18px;background:var(--panel);border-top:1px solid var(--line)}
+.cal-wrap{display:grid;grid-template-columns:1fr 240px;gap:18px;align-items:start}
+.cal-body{display:flex;flex-direction:column;gap:14px;min-width:0}
+.cal-side{position:sticky;top:0;display:flex;flex-direction:column;gap:8px}
+.cal-preview{overflow:hidden;border:1px solid var(--line);border-radius:4px;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.cal-preview{position:relative}
+.cal-preview .page{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:none;margin:0;pointer-events:none}
+.cal-kinds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cal-dates{display:flex;flex-direction:column;gap:6px}
+.cal-date{display:grid;grid-template-columns:auto 1fr auto;gap:6px;align-items:center}
+.cal-date input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-height:36px;min-width:0}
+@media (max-width:700px){.cal-wrap{grid-template-columns:1fr}.cal-side{position:static;order:-1;align-items:center}.cal-kinds{grid-template-columns:1fr}}
+.pcols{display:grid;grid-template-columns:1fr 260px;gap:18px}
+.popts{display:flex;flex-direction:column;gap:12px;min-width:0}
+.layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;text-align:center;position:relative}
+.tile input{position:absolute;opacity:0;pointer-events:none}
+.tile svg{width:40px;height:40px;fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.3}
+.tile svg .sh{fill:var(--panel);stroke:var(--muted)}
+.tile svg .ln{fill:none}
+.tile svg .lb rect{stroke-width:.6}
+.tile:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.tile:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.plabel{font-size:14px;color:var(--muted);min-width:56px}
+.pchecks{display:flex;flex-direction:column;gap:6px}
+.pprev{display:flex;flex-direction:column;gap:10px;align-items:center}
+#sheetPrev{position:relative;width:240px;height:260px;display:grid;place-items:center}
+.sheet{position:relative;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.2);overflow:hidden}
+.sheet .slot{position:absolute;overflow:hidden;background:#fff;outline:1px dashed rgba(191,78,25,.55)}
+.sheet .slot .page{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:none;margin:0;pointer-events:none}
+.sheet .slot.blank{background:repeating-linear-gradient(45deg,#f6f2ee 0 4px,#fff 4px 8px)}
+.sheet .slot .no{position:absolute;right:3px;bottom:2px;font:700 11px/1 system-ui;color:#fff;background:var(--accent);border-radius:4px;padding:2px 4px}
+.sheet .fold{position:absolute;top:0;bottom:0;left:50%;border-left:1px dashed #999}
+.sheet .mk{position:absolute;background:#000}
+.side-tag{position:absolute;top:-2px;left:0;font-size:12px;color:var(--muted)}
+#printHint{text-align:center;max-width:250px}
+.checkline{margin:0;padding:9px 12px;border-radius:10px;background:color-mix(in srgb,var(--warn) 14%,transparent);font-size:14px}
+.checkline.ok{background:var(--accent-soft)}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:700;text-decoration:underline;cursor:pointer;padding:0 2px}
+@media (max-width:700px){.pcols{grid-template-columns:1fr}.pprev{order:-1}#sheetPrev{height:190px}}
+/* check */
+#checkList h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:10px 0 4px}
+.issue{display:grid;grid-template-columns:22px 1fr;gap:2px 8px;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:9px 10px;margin:0 0 6px;cursor:pointer}
+.issue:hover{border-color:var(--accent)}
+.issue .ic{font-size:15px;line-height:1.3}
+.issue .tx{font-size:14px;font-weight:600}
+.issue small{grid-column:2;color:var(--muted);font-size:13px}
+.allgood{display:flex;gap:10px;align-items:center;padding:14px;border-radius:10px;background:var(--accent-soft);font-weight:600}
+
+/* templates */
+button.brand{border:0;background:none;padding:2px 4px;border-radius:8px;cursor:pointer;color:inherit;font:inherit;font-weight:800;font-size:19px}
+button.brand:hover{background:var(--accent-soft)}
+.gallery{position:fixed;inset:0;z-index:28;background:var(--bg);display:flex;flex-direction:column}
+.gal-head{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+.gal-head h2{margin:0;font-size:20px;flex:1}
+#galSearch{font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);width:min(260px,40vw)}
+.gal-tools{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.gal-lab{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.gal-tools select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);max-width:100%}
+.schemes{display:flex;flex-wrap:wrap;gap:6px}
+.sch{display:inline-flex;height:30px;min-width:40px;padding:3px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;gap:0;overflow:hidden;align-items:stretch}
+.sch i{flex:1;width:11px}
+.sch i:first-child{border-radius:4px 0 0 4px}.sch i:last-child{border-radius:0 4px 4px 0}
+.sch.own{padding:0 10px;font-size:13px;font-weight:600;align-items:center;white-space:nowrap;flex-shrink:0}
+.sch.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.gal-body{flex:1;display:flex;min-height:0}
+.gal-cats{width:210px;flex:none;overflow:auto;padding:12px;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;gap:2px}
+.gal-cats button{text-align:left;border:0;background:none;padding:9px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+.gal-cats button:hover{background:var(--accent-soft)}
+.gal-cats button.on{background:var(--accent-soft);color:var(--accent)}
+.gal-grid{flex:1;overflow:auto;padding:8px 22px 40px}
+.gal-grid h3{font-size:17px;margin:20px 0 10px}
+.gcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+.gcard{position:relative}
+.gmaker-ico{display:flex!important;align-items:center;justify-content:center;color:var(--accent);background:var(--accent-soft)!important;width:150px;height:200px}
+.gpick{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel);cursor:pointer}
+.gpick:hover{border-color:var(--accent);box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.gmini{display:block;position:relative;overflow:hidden;background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.18);min-width:120px}
+.gmini .page{position:absolute;left:0;top:0;transform-origin:0 0;box-shadow:none;margin:0;pointer-events:none}
+.gname{font-size:13.5px;font-weight:600;text-align:center}
+.gforget{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--panel);cursor:pointer;font-size:16px}
+body.gallery-open{overflow:hidden}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font-family:inherit;color:var(--ink);border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 12px;cursor:pointer;font-weight:600;font-size:13.5px}
+.chips button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.art-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;max-height:min(52vh,460px);overflow:auto;padding:2px}
+.art-grid button{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;padding:8px;display:grid;place-items:center}
+.art-grid button:hover{border-color:var(--accent);background:var(--accent-soft)}
+.art-grid img{width:100%;height:100%;object-fit:contain}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.dgrid label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted)}
+.dgrid label.wide{grid-column:1/-1}
+.dgrid input,.dgrid textarea{width:100%;min-width:0;box-sizing:border-box;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:7px 9px}
+.dgrid textarea{min-height:58px;resize:vertical}
+.dlogo{width:48px;height:48px;border:1px dashed var(--line);border-radius:8px;display:grid;place-items:center;overflow:hidden;background:#fff}
+.dlogo img{max-width:100%;max-height:100%}
+.ds-schemes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:6px 0 10px}
+.ds-schemes .sch{width:100%}
+@media (max-width:700px){.gal-tools{flex-wrap:nowrap;overflow-x:auto;padding:8px 12px}.gal-tools .schemes{flex-wrap:nowrap}.gal-tools select{min-width:200px}.gal-cats{display:none}.gal-head h2{font-size:17px}#galSearch{width:120px}.gcards{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.dgrid{grid-template-columns:1fr}}
+
+/* mail merge */
+.mstep{display:flex;align-items:center;gap:8px;font-size:15px;margin:6px 0 0}
+.mstep b{width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:12px;flex:none}
+.mlist{margin:0;font-size:14px}
+.mtable{overflow:auto;max-height:120px;border:1px solid var(--line);border-radius:8px}
+.mtable table{border-collapse:collapse;font-size:12.5px;width:100%}
+.mtable th,.mtable td{padding:4px 7px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.mtable th{background:var(--accent-soft);position:sticky;top:0}
+.mpaste{font:13px/1.4 ui-monospace,monospace;min-height:120px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--panel);color:var(--ink);width:100%}
+.mnav{align-items:center}.mnav span{min-width:110px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+#mergeFields button{font-family:Georgia,serif}
+
+.block-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;max-height:min(52vh,460px);overflow:auto;padding:2px}
+.blk{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:6px;padding:10px 6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--panel);cursor:pointer;font-size:12.5px;font-weight:600;min-height:150px}
+.blk:hover{border-color:var(--accent);background:var(--accent-soft)}
+.bmini{position:relative;display:block;margin:auto 0;overflow:hidden;background:#fff;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.bmini .page{position:absolute;left:0;top:0;transform-origin:0 0;margin:0;pointer-events:none}
+.qrurl{flex:1;font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);min-width:0}
+</style>
+</head>
+<body>
+<header>
+  <button class="brand" id="bHome" type="button" title="Start" data-t-title="home.title"><svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="2" width="18" height="20" rx="2.5" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6"/><rect x="6" y="5.5" width="12" height="5" rx="1" fill="var(--accent)"/><path d="M6 14h12M6 17h8" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/></svg>Pubwork</button>
+  <button id="fname" type="button" title="Rename" data-t-title="doc.rename" hidden></button>
+  <span class="spacer"></span>
+  <div class="zoom" id="zoomBox" hidden>
+    <button id="zOut" title="Zoom out" aria-label="Zoom out" data-t-title="zoom.out" data-t-aria="zoom.out">−</button><span id="zoomPct">100%</span><button id="zIn" title="Zoom in" aria-label="Zoom in" data-t-title="zoom.in" data-t-aria="zoom.in">+</button><button id="zFit" title="Fit the page" aria-label="Fit the page" data-t-title="zoom.fitLong" data-t-aria="zoom.fitLong" style="font-size:14px;min-width:44px;width:auto;padding:0 8px"><span data-t="zoom.fit">Fit</span></button>
+  </div>
+  <button class="btn" id="bKeep" hidden title="Ctrl+S"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4"/><path d="M8 20v-6h8v6"/></svg><span class="hide-sm" data-t="keep.button">Save</span></button>
+  <button class="btn" id="bPrint" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="printPanel" title="Ctrl+P"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg><span class="hide-sm" data-t="print.button">Print</span></button>
+  <button class="btn primary" id="bSave" hidden aria-haspopup="dialog" aria-expanded="false" aria-controls="savePanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 19h14"/></svg><span data-t="save.button">Save as</span></button>
+  <button class="btn" id="bOpen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="hide-sm" data-t="open.button">Open</span></button>
+  <input type="file" id="file" accept=".pub,.pubwork,.zip,application/x-mspublisher,application/vnd.ms-publisher" hidden>
+  <input type="file" id="picFile" accept="image/*" hidden>
+</header>
+<div id="tools" role="toolbar" aria-label="Tools" data-t-aria="tools.label" hidden>
+  <button class="tool" id="tUndo" data-t-title="tools.undoLong" title="Undo (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg><span data-t="tools.undo">Undo</span></button>
+  <button class="tool" id="tRedo" data-t-title="tools.redoLong" title="Redo (Ctrl+Y)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg><span data-t="tools.redo">Redo</span></button>
+  <span class="tsep"></span>
+  <button class="tool" id="tText"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M9 20h6"/></svg><span data-t="tools.text">Text</span></button>
+  <button class="tool" id="tPic" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg><span data-t="tools.picture">Picture</span></button>
+  <button class="tool" id="tBlocks" aria-haspopup="dialog" aria-controls="blocksPanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z"/></svg><span data-t="tools.blocks">Blocks</span></button>
+  <button class="tool" id="tShape" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="10" height="10" rx="1"/><circle cx="16" cy="8" r="5"/></svg><span data-t="tools.shape">Shape</span></button>
+  <button class="tool" id="tTable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></svg><span data-t="tools.table">Table</span></button>
+  <button class="tool" id="tWordArt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17c3-6 13-6 16 0"/><path d="M8 13l2-6h4l2 6"/><path d="M9.3 10.5h5.4"/></svg><span data-t="tools.wordart">WordArt</span></button>
+  <span class="tsep"></span>
+  <button class="tool" id="tDelete" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg><span data-t="tools.delete">Delete</span></button>
+  <span class="tsep"></span>
+  <button class="tool" id="tMerge" aria-haspopup="dialog" aria-expanded="false" aria-controls="mergePanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg><span data-t="tools.merge">Merge</span></button>
+  <button class="tool" id="tCheck" aria-haspopup="dialog" aria-expanded="false" aria-controls="checkPanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l2.5 2.5L16 9"/><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg><span data-t="tools.check">Check</span></button>
+  <button class="tool" id="tMore" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg><span data-t="tools.more">More</span></button>
+</div>
+<div id="picMenu" class="menu" role="menu" hidden>
+  <button role="menuitem" id="picFromFile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span data-t="pic.fromFile">From this computer</span></button>
+  <button role="menuitem" id="picFromLib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1 1.3 2.1 2 3.5 2s2.5-.7 3.5-2M9 9.5h.01M15 9.5h.01"/></svg><span data-t="pic.fromLib">Free pictures and icons</span></button>
+  <button role="menuitem" id="picFrame"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/></svg><span data-t="pic.frame">Empty photo frame</span></button>
+</div>
+<div id="moreMenu" class="menu more-menu" role="menu" hidden>
+  <div class="menu-lab" data-t="more.text">Text</div>
+  <button role="menuitem" data-act="find" data-t="more.find">Find and replace…</button>
+  <button role="menuitem" data-act="spell" data-t="more.spell">Check spelling…</button>
+  <button role="menuitem" data-act="styles" data-t="more.styles">Text styles…</button>
+  <button role="menuitem" data-act="pageNumber" data-t="more.pageNumber">Page number</button>
+  <button role="menuitem" data-act="date" data-t="more.date">Today’s date</button>
+  <button role="menuitem" data-act="textFile" data-t="more.textFile">Text from a file…</button>
+  <div class="menu-lab" data-t="more.insert">Insert</div>
+  <button role="menuitem" data-act="tableFromFile" data-t="more.tableFromFile">Table from Excel or CSV…</button>
+  <button role="menuitem" data-act="chart" data-t="more.chart">Chart…</button>
+  <div class="menu-lab" data-t="more.pages">Pages</div>
+  <button role="menuitem" data-act="guides" data-t="more.guides">Layout guides…</button>
+  <button role="menuitem" data-act="masters" data-t="more.masters">Master pages…</button>
+  <div class="menu-lab" data-t="more.share">Share and print shop</div>
+  <button role="menuitem" data-act="share" data-t="more.shareIt">Share…</button>
+  <button role="menuitem" data-act="pack" data-t="more.pack">Take to a print shop…</button>
+  <div class="menu-lab" data-t="more.help">Help</div>
+  <button role="menuitem" data-act="tour" data-t="more.tour">Where is everything? (tour)</button>
+</div>
+<div id="shapeMenu" class="menu" role="menu" hidden>
+  <button role="menuitem" data-shape="rect"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="1"/></svg><span data-t="shape.rect">Rectangle</span></button>
+  <button role="menuitem" data-shape="rounded"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="5"/></svg><span data-t="shape.rounded">Rounded box</span></button>
+  <button role="menuitem" data-shape="ellipse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="12" rx="9" ry="7"/></svg><span data-t="shape.ellipse">Circle</span></button>
+  <button role="menuitem" data-shape="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18 20 6"/></svg><span data-t="shape.line">Line</span></button>
+  <button role="menuitem" data-shape="star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7z"/></svg><span data-t="shape.star">Star</span></button>
+</div>
+<main>
+  <nav id="thumbs" aria-label="Pages" data-t-aria="aria.pages" hidden></nav>
+  <div id="desk">
+    <div id="pages"></div>
+    <section id="start">
+     <div class="start-inner">
+      <div class="card">
+        <h1><!--H1-->Open your Publisher files, free<!--/H1--></h1>
+        <p class="lede"><!--LEDE-->Microsoft Publisher was retired in October 2026. Your old newsletters, flyers, menus and invitations still open here, in your browser.<!--/LEDE--></p>
+        <!--MAKER-->
+        <div class="drop" id="drop">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+          <div class="big" data-t="open.drop">Drop a .pub file here</div>
+          <button class="btn primary" id="eOpen" data-t="open.choose">Choose a Publisher file</button>
+        </div>
+        <div class="batch" id="batchBox" hidden>
+          <div class="chips" id="batchFormats" hidden></div>
+          <div class="batch-row"><button class="btn" id="bFolder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span data-t="batch.folder">Choose a folder</span></button><span class="hint" data-t="batch.hint">Many files? Choose several at once, or a whole folder. They come back together in one .zip file.</span></div>
+        </div>
+        <input type="file" id="folder" webkitdirectory multiple hidden>
+        <div class="samples"><span data-t="open.samples">No file to hand? Try a sample:</span> <button id="sNews" data-t="open.sampleNews">School newsletter</button><button id="sBroch" data-t="open.sampleBroch">Brochure</button></div>
+        <div class="divider"><span data-t="new.or">or start something new</span></div>
+        <div class="newrow">
+          <button class="btn primary" id="bTemplates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span data-t="gallery.open">Templates</span></button>
+          <button class="btn" id="bCalendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span data-t="cal.button">Calendar</span></button>
+          <button class="btn" data-new="a4"><span class="paper" style="width:12px;height:17px"></span><span data-t="new.a4">A4 page</span></button>
+          <button class="btn" data-new="letter"><span class="paper" style="width:13px;height:17px"></span><span data-t="new.letter">US Letter</span></button>
+          <button class="btn" data-new="a5"><span class="paper" style="width:10px;height:14px"></span><span data-t="new.a5">A5 flyer</span></button>
+          <button class="btn" data-new="square"><span class="paper" style="width:15px;height:15px"></span><span data-t="new.square">Social post</span></button>
+          <button class="btn" data-new="card"><span class="paper" style="width:15px;height:10px"></span><span data-t="new.card">Business card</span></button>
+          <select id="newMore" class="newmore" aria-label="More sizes" data-t-aria="new.more"></select>
+        </div>
+        <div class="recent" id="recent" hidden><h2 data-t="recent.title">Continue where you left off</h2><ul></ul></div>
+        <div class="privacy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span data-t="open.privacy">Your file is opened on this computer and is never uploaded. Works with files from Publisher 97 up to Publisher 2021 and Microsoft 365.</span></div>
+        <p class="convert-note" id="convertNote" hidden></p>
+        <p class="support-line" id="supportLine"><a id="supportLink" href="support/" data-t="support.line">Pubwork is free for everyone. Help keep it that way</a></p>
+        <div class="langpick"><label for="langSel" data-t="lang.choose">Language</label> <select id="langSel"></select></div>
+      </div>
+      <!--ARTICLE-->
+     </div>
+    </section>
+  </div>
+  <aside id="side" hidden></aside>
+</main>
+<div id="savePanel" class="panel" hidden role="dialog" aria-modal="false" aria-labelledby="saveTitle">
+  <h2 id="saveTitle" data-t="save.title">Save a copy</h2>
+  <fieldset>
+    <legend data-t="save.format">Format</legend>
+    <label class="choice"><input type="radio" name="fmt" value="pdf" checked><span class="t" data-t="save.pdf">PDF</span><span class="d" data-t="save.pdfHint">For printing and e-mail. Text stays sharp and can be searched.</span></label>
+    <label class="choice"><input type="radio" name="fmt" value="jpg"><span class="t" data-t="save.jpg">JPG picture</span><span class="d" data-t="save.jpgHint">For Facebook, WhatsApp and e-mail. Small files.</span></label>
+    <label class="choice"><input type="radio" name="fmt" value="png"><span class="t" data-t="save.png">PNG picture</span><span class="d" data-t="save.pngHint">The sharpest picture, for websites and posters.</span></label>
+    <label class="choice"><input type="radio" name="fmt" value="docx"><span class="t" data-t="save.docx">Word document</span><span class="d" data-t="save.docxHint">Opens in Microsoft Word. Text stays editable and everything stays in place.</span></label>
+    <label class="choice"><input type="radio" name="fmt" value="pptx"><span class="t" data-t="save.pptx">PowerPoint</span><span class="d" data-t="save.pptxHint">One slide for each page. Text stays editable.</span></label>
+    <label class="choice"><input type="radio" name="fmt" value="html"><span class="t" data-t="save.html">Web page</span><span class="d" data-t="save.htmlHint">One .html file that opens in any browser, for a website or an e-mail.</span></label>
+    <label class="choice" id="fmtEml"><input type="radio" name="fmt" value="eml"><span class="t" data-t="save.eml">E-mail</span><span class="d" data-t="save.emlHint">A ready e-mail with the pages inside, to open in Outlook, Mail or Thunderbird and send.</span></label>
+    <label class="choice" id="fmtXps"><input type="radio" name="fmt" value="xps"><span class="t" data-t="save.xps">XPS</span><span class="d" data-t="save.xpsHint">Microsoft’s fixed-page format, for systems that ask for it.</span></label>
+    <label class="choice" id="fmtOdg"><input type="radio" name="fmt" value="odg"><span class="t" data-t="save.odg">LibreOffice Draw</span><span class="d" data-t="save.odgHint">The free, open format. Opens in LibreOffice Draw, where everything stays editable.</span></label>
+    <label class="choice"><input type="radio" name="fmt" value="pubwork"><span class="t" data-t="save.pubwork">Pubwork file</span><span class="d" data-t="save.pubworkHint">Keeps everything so you can open it here again and keep changing it.</span></label>
+  </fieldset>
+  <fieldset id="sizeRow" hidden>
+    <legend data-t="save.size">Picture size</legend>
+    <div class="row">
+      <label class="choice"><input type="radio" name="size" value="social" checked><span class="t" data-t="save.social">Social media</span></label>
+      <label class="choice"><input type="radio" name="size" value="print"><span class="t" data-t="save.print">Print (300 dpi)</span></label>
+      <label class="choice"><input type="radio" name="size" value="screen"><span class="t" data-t="save.screen">Small</span></label>
+    </div>
+  </fieldset>
+  <fieldset id="pagesRow">
+    <legend data-t="save.pages">Pages</legend>
+    <div class="row">
+      <label class="choice"><input type="radio" name="pages" value="all" checked><span class="t" id="pagesAll" data-t="save.allPages">All pages</span></label>
+      <label class="choice"><input type="radio" name="pages" value="current"><span class="t" id="pagesCur">This page</span></label>
+    </div>
+  </fieldset>
+  <p class="hint" id="saveHint"></p>
+  <div class="actions"><button class="btn" id="saveCancel" data-t="save.cancel">Cancel</button><button class="btn primary" id="saveGo">Save</button></div>
+</div>
+<div id="printPanel" class="panel wide" hidden role="dialog" aria-modal="false" aria-labelledby="printTitle">
+  <h2 id="printTitle" data-t="print.title">Print</h2>
+  <div class="pcols">
+    <div class="popts">
+      <fieldset>
+        <legend data-t="print.layout">On each sheet of paper</legend>
+        <div class="layouts">
+          <label class="tile"><input type="radio" name="lay" value="one" checked><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="10" y="5" width="20" height="30" rx="1"/></svg><span data-t="print.one">One page</span></label>
+          <label class="tile"><input type="radio" name="lay" value="n2"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="4" y="9" width="32" height="22" rx="1" class="sh"/><rect x="6" y="11" width="13" height="18"/><rect x="21" y="11" width="13" height="18"/></svg><span data-t="print.n2">2 copies</span></label>
+          <label class="tile"><input type="radio" name="lay" value="n4"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="10" y="5" width="20" height="30" rx="1" class="sh"/><rect x="11.5" y="6.5" width="8" height="13"/><rect x="20.5" y="6.5" width="8" height="13"/><rect x="11.5" y="20.5" width="8" height="13"/><rect x="20.5" y="20.5" width="8" height="13"/></svg><span data-t="print.n4">4 copies</span></label>
+          <label class="tile"><input type="radio" name="lay" value="fill"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="10" y="5" width="20" height="30" rx="1" class="sh"/><path d="M12 8h16v24H12zM20 8v24M12 12.8h16M12 17.6h16M12 22.4h16M12 27.2h16" class="ln"/></svg><span data-t="print.fill">Fill the sheet</span></label>
+          <label class="tile"><input type="radio" name="lay" value="labels"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="10" y="5" width="20" height="30" rx="1" class="sh"/><g class="lb"><rect x="11.5" y="7" width="5.2" height="3.6" rx=".8"/><rect x="17.4" y="7" width="5.2" height="3.6" rx=".8"/><rect x="23.3" y="7" width="5.2" height="3.6" rx=".8"/><rect x="11.5" y="11.4" width="5.2" height="3.6" rx=".8"/><rect x="17.4" y="11.4" width="5.2" height="3.6" rx=".8"/><rect x="23.3" y="11.4" width="5.2" height="3.6" rx=".8"/><rect x="11.5" y="15.8" width="5.2" height="3.6" rx=".8"/><rect x="17.4" y="15.8" width="5.2" height="3.6" rx=".8"/><rect x="23.3" y="15.8" width="5.2" height="3.6" rx=".8"/><rect x="11.5" y="20.2" width="5.2" height="3.6" rx=".8"/><rect x="17.4" y="20.2" width="5.2" height="3.6" rx=".8"/><rect x="23.3" y="20.2" width="5.2" height="3.6" rx=".8"/><rect x="11.5" y="24.6" width="5.2" height="3.6" rx=".8"/><rect x="17.4" y="24.6" width="5.2" height="3.6" rx=".8"/><rect x="23.3" y="24.6" width="5.2" height="3.6" rx=".8"/><rect x="11.5" y="29" width="5.2" height="3.6" rx=".8"/><rect x="17.4" y="29" width="5.2" height="3.6" rx=".8"/><rect x="23.3" y="29" width="5.2" height="3.6" rx=".8"/></g></svg><span data-t="print.labels">Labels</span></label>
+          <label class="tile"><input type="radio" name="lay" value="booklet"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 10c-4-3-10-3-15-2v22c5-1 11-1 15 2 4-3 10-3 15-2V8c-5-1-11-1-15 2z"/><path d="M20 10v22" class="ln"/></svg><span data-t="print.booklet">Booklet</span></label>
+        </div>
+      </fieldset>
+      <div class="prow" id="labelRow" hidden><select id="labelSel" aria-label="Label sheet" data-t-aria="print.labelSheet"></select></div>
+      <div class="prow" id="paperRow"><label for="paperSel" class="plabel" data-t="print.paper">Paper</label><select id="paperSel"></select></div>
+      <div class="pchecks" id="marksRow"><label class="check"><input type="checkbox" id="pMarks"> <span data-t="print.marks">Crop marks (where to cut)</span></label></div>
+      <div class="pchecks" id="seqRow" hidden><label class="check"><input type="checkbox" id="pSeq"> <span data-t="print.sequence">A different page in each place (for mail merge)</span></label></div>
+      <div class="pchecks" id="bleedRow"><label class="check"><input type="checkbox" id="pBleed"> <span data-t="print.bleed">Bleed for a print shop (3 mm past the edge)</span></label></div>
+      <fieldset id="printPagesRow">
+        <legend data-t="save.pages">Pages</legend>
+        <div class="row">
+          <label class="choice"><input type="radio" name="ppages" value="all" checked><span class="t" data-t="save.allPages">All pages</span></label>
+          <label class="choice"><input type="radio" name="ppages" value="current"><span class="t" id="ppagesCur">This page</span></label>
+        </div>
+      </fieldset>
+    </div>
+    <div class="pprev">
+      <div id="sheetPrev" aria-hidden="true"></div>
+      <p class="hint" id="printHint"></p>
+    </div>
+  </div>
+  <p class="checkline" id="printCheck" hidden><span></span> <button type="button" class="linkbtn" id="printCheckShow" data-t="check.show">Show</button></p>
+  <div class="actions"><button class="btn" id="printCancel" data-t="save.cancel">Cancel</button><button class="btn" id="printSave" data-t="print.savePdf">Save as PDF</button><button class="btn primary" id="printGo" data-t="print.go">Print</button></div>
+</div>
+<div id="checkPanel" class="panel" hidden role="dialog" aria-modal="false" aria-labelledby="checkTitle">
+  <h2 id="checkTitle" data-t="check.title">Check before printing</h2>
+  <div id="checkList"></div>
+  <div class="actions"><button class="btn" id="checkAgain" data-t="check.again">Check again</button><button class="btn primary" id="checkClose" data-t="check.close">Close</button></div>
+</div>
+<div id="gallery" class="gallery" hidden role="dialog" aria-modal="true" aria-labelledby="galTitle">
+  <div class="gal-head">
+    <h2 id="galTitle" data-t="gallery.title">Start from a template</h2>
+    <input id="galSearch" type="search" placeholder="Search" data-t-placeholder="gallery.search" aria-label="Search" data-t-aria="gallery.search">
+    <button class="btn" id="galClose" data-t="check.close">Close</button>
+  </div>
+  <div class="gal-tools"><span class="gal-lab" data-t="gallery.colours">Colours</span><div id="galSchemes" class="schemes"></div><label class="gal-lab" for="galFonts" data-t="gallery.fonts">Fonts</label><select id="galFonts"></select></div>
+  <div class="gal-body"><nav id="galCats" class="gal-cats" aria-label="Kinds" data-t-aria="aria.kinds"></nav><div id="galGrid" class="gal-grid"></div></div>
+</div>
+<div id="artPanel" class="panel wide" hidden role="dialog" aria-modal="false" aria-labelledby="artTitle">
+  <h2 id="artTitle" data-t="art.title">Free pictures and icons</h2>
+  <div id="artCats" class="chips"></div>
+  <div id="artGrid" class="art-grid"></div>
+  <p class="hint" data-t="art.licence">Free to use for anything, also in print and for business (Fluent Emoji and Tabler Icons, MIT licence).</p>
+  <div class="actions"><button class="btn" id="artClose" data-t="check.close">Close</button></div>
+</div>
+<div id="detailsPanel" class="panel" hidden role="dialog" aria-modal="false" aria-labelledby="detTitle">
+  <h2 id="detTitle" data-t="details.title">My details</h2>
+  <p class="hint" data-t="details.hint">Type them once: business cards, letterheads and other templates are filled in for you. They stay in this browser.</p>
+  <div class="dgrid" id="detFields"></div>
+  <div class="prow"><span class="dlogo" id="detLogo"></span><button class="btn" id="detLogoPick" data-t="details.logoPick">Choose logo…</button><button class="btn" id="detLogoClear" data-t="details.logoClear">Remove</button></div>
+  <div class="actions"><button class="btn" id="detCancel" data-t="save.cancel">Cancel</button><button class="btn" id="detFill" data-t="details.fill">Save and fill in</button><button class="btn primary" id="detSave" data-t="details.save">Save</button></div>
+</div>
+<div id="blocksPanel" class="panel wide" hidden role="dialog" aria-modal="false" aria-labelledby="blocksTitle">
+  <h2 id="blocksTitle" data-t="blk.title">Building blocks</h2>
+  <div id="blockCats" class="chips"></div>
+  <div class="prow" id="qrRow" hidden><label for="qrUrl" class="plabel" data-t="blk.qrLabel">Web address</label><input id="qrUrl" class="qrurl" placeholder="www.example.com" inputmode="url"></div>
+  <div id="blockGrid" class="block-grid"></div>
+  <div class="actions"><button class="btn" id="blocksClose" data-t="check.close">Close</button></div>
+</div>
+<div id="mergePanel" class="panel" hidden role="dialog" aria-modal="false" aria-labelledby="mergeTitle">
+  <h2 id="mergeTitle" data-t="merge.title">Mail merge</h2>
+  <div id="mergeBody"></div>
+  <input type="file" id="photoFiles" accept="image/*" multiple hidden>
+  <input type="file" id="listFile" accept=".xlsx,.ods,.csv,.tsv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet" hidden>
+  <div class="actions"><button class="btn" id="mergeClose" data-t="check.close">Close</button></div>
+</div>
+<div id="calPanel" class="panel wide" hidden role="dialog" aria-modal="false" aria-labelledby="calTitle">
+  <h2 id="calTitle" data-t="cal.title">Make a calendar</h2>
+  <div class="cal-wrap"><div id="calBody" class="cal-body"></div><div class="cal-side"><div id="calPreview" class="cal-preview"></div><p class="hint" data-t="cal.previewHint">The first page. You can change everything afterwards.</p></div></div>
+  <input type="file" id="calPhotoFiles" accept="image/*" multiple hidden>
+  <div class="actions"><button class="btn" id="calClose" data-t="save.cancel">Cancel</button><button class="btn primary" id="calMake" data-t="cal.make">Make the calendar</button></div>
+</div>
+<div id="busy" hidden><div class="box"><div class="spin"></div><span id="busyText">Opening…</span></div></div>
+<div id="toast" hidden role="status"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+/* Pictures & objects: picture effects, crop shapes, arranging, insert dialogs */
+.pfx-sl{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;margin:8px 0;font-size:14px}
+.pfx-sl output{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px;min-width:3.5em;text-align:right}
+.pfx-sl input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent);margin:0;min-height:24px}
+.pfx-chips{margin:8px 0}
+.pfx-chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pfx-swatches{gap:6px}
+.pfx-swatches .sw{width:28px;height:28px;border-radius:50%;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.pfx-swatches .sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent)}
+.pfx-swatches label.sw{display:inline-grid;place-items:center;overflow:hidden;position:relative;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)}
+.pfx-swatches label.sw input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pfx-shapes{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:6px 0}
+.pfx-shapes button{min-height:40px;border:1px solid var(--line);background:var(--panel);border-radius:7px;cursor:pointer;display:grid;place-items:center;padding:4px}
+.pfx-shapes button svg{width:26px;height:26px;fill:var(--accent-soft);stroke:currentColor;stroke-width:1.3;stroke-linejoin:round}
+.pfx-shapes button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.pfx-alt{display:block;font-size:14px;margin:6px 0 4px}
+.pfx-alt-in{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;resize:vertical;min-height:52px}
+.parr .pbtn svg{width:20px;height:20px}
+.parr .prow.wrap .btn svg{width:18px;height:18px;flex:none}
+.parr .lockline{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;background:var(--accent-soft);font-size:13.5px;margin:6px 0}
+.page .pw-ui.sel.locked .handle{display:none}
+.page .pw-ui.lockbadge{position:absolute;right:-1px;top:-1px;transform:translate(50%,-50%);width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;zoom:calc(1 / var(--z, 1));box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.page .pw-ui.lockbadge svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+/* insert dialogs */
+.pw-dlg{z-index:40}
+.pw-dlg.wide{width:min(460px,calc(100vw - 28px))}
+.pw-dlg label.row2{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:15px}
+.pw-dlg input[type=number],.pw-dlg input[type=text],.pw-dlg textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-height:38px}
+.pw-dlg input[type=number]{width:90px}
+.pw-dlg input[type=text]{width:100%}
+.pw-dlg textarea{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;tab-size:14}
+.pw-dlg .ctypes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pw-dlg .ctypes label{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-size:13px;font-weight:600}
+.pw-dlg .ctypes label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.pw-dlg .ctypes input{position:absolute;opacity:0;pointer-events:none}
+.pw-dlg .ctypes svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pw-dlg .tgrid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;width:max-content}
+.pw-dlg .tgrid i{width:18px;height:18px;border:1px solid var(--line);border-radius:3px;display:block;cursor:pointer}
+.pw-dlg .tgrid i.on{background:var(--accent-soft);border-color:var(--accent)}
+.pw-dlg .err{color:#b42318;font-size:13.5px;margin:0}
+.parr .lockline svg{width:20px;height:20px;flex:none}
+.parr .pbtn:disabled{opacity:.4;cursor:default}
