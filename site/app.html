@@ -220,9 +220,14 @@ main{flex:1;display:flex;min-height:0}
 .maker{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:4px 0 18px}
 .btn.big{font-size:17px;padding:12px 22px;min-height:48px}
 .maker .hint{font-size:14px;color:var(--muted);margin:0}
-.support-line{margin:10px 0 0;font-size:13.5px}
-.support-line a{color:var(--muted);text-underline-offset:3px}
-.support-line a::before{content:"\2665  ";color:var(--accent)}
+.support-line{margin:16px 0 0;font-size:13.5px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.support-line[hidden]{display:none}
+#supportLink{color:var(--muted);text-underline-offset:3px}
+#supportLink::before{content:"\2665  ";color:var(--accent)}
+.kofi{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:0 18px;border-radius:999px;background:var(--accent-soft);border:1.5px solid var(--accent);color:var(--accent);font-weight:700;font-size:15px;text-decoration:none;transition:background .15s,color .15s}
+.kofi:hover{background:var(--accent);color:var(--accent-ink)}
+.kofi:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.kofi-foot a::before{content:"\2615  "}
 .ad-slot{min-height:120px;display:block;margin:4px 0}
 .pgrid select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-height:36px;width:100%}
 .pgrid label.wide{grid-column:1/-1}
@@ -446,7 +451,7 @@ body.gallery-open{overflow:hidden}
         <div class="recent" id="recent" hidden><h2 data-t="recent.title">Continue where you left off</h2><ul></ul></div>
         <div class="privacy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span data-t="open.privacy">Your file is opened on this computer and is never uploaded. Works with files from Publisher 97 up to Publisher 2021 and Microsoft 365.</span></div>
         <p class="convert-note" id="convertNote" hidden></p>
-        <p class="support-line" id="supportLine"><a id="supportLink" href="support/" data-t="support.line">Pubwork is free for everyone. Help keep it that way</a></p>
+        <div class="support-line" id="supportLine"><a class="kofi" id="kofiLink" href="support/" target="_blank" rel="noopener"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M7 2v2M11 2v2M15 2v2"/></svg><span data-t="support.coffee">Buy us a coffee</span></a><a id="supportLink" href="support/" data-t="support.line">Pubwork is free for everyone. Help keep it that way</a></div>
         <div class="langpick"><label for="langSel" data-t="lang.choose">Language</label> <select id="langSel"></select></div>
       </div>
       <!--ARTICLE-->

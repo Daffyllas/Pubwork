@@ -464,6 +464,7 @@ export default {
   'batch.done': "Fatto: {ok} file convertiti, tutti in un unico file .zip.",
   'batch.doneSome': "{ok} file convertiti, {bad} non è stato possibile convertirli. L’elenco nel file .zip dice quali.",
   'support.line': "Pubwork è gratis per tutti. Aiutaci a mantenerlo così",
+  'support.coffee': 'Offrici un caffè',
   // Batch H: masters, WordArt, printing, mail merge, pictures, text, spelling, new formats
   'err.oldpub': "Questo file è stato creato con Publisher 2.0 (1993), troppo vecchio per aprirlo qui. Aprilo in una versione più recente di Publisher e salvalo di nuovo: così funzionerà.",
   'err.emptyOpened': "In questa pubblicazione non c’è nulla che si possa leggere, quindi si apre come una pagina bianca.",

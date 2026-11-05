@@ -103,7 +103,7 @@ function footer(l, kind, here) {
   const legal = ['support', 'privacy', 'terms'].map(link).join('');
   return `${groups}
 <section><h2>${esc(c.langTitle)}</h2><ul class="links">${langs}</ul></section>
-<footer class="sitefoot"><ul class="links">${legal}${cfg.source ? `<li><a href="${esc(cfg.source)}" rel="noopener">${esc(c.sourceLabel)}</a></li>` : ''}</ul>${cfg.email ? `<p class="contact-foot">${esc(c.contactLabel)} <a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a></p>` : ''}<p>${esc(c.footer)}</p></footer>`;
+<footer class="sitefoot"><ul class="links">${legal}${cfg.source ? `<li><a href="${esc(cfg.source)}" rel="noopener">${esc(c.sourceLabel)}</a></li>` : ''}${cfg.kofi ? `<li class="kofi-foot"><a href="https://ko-fi.com/${esc(cfg.kofi)}" rel="noopener" target="_blank">${esc(words[l]['support.coffee'])}</a></li>` : ''}</ul>${cfg.email ? `<p class="contact-foot">${esc(c.contactLabel)} <a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a></p>` : ''}<p>${esc(c.footer)}</p></footer>`;
 }
 
 function toolPage(l, kind) {
@@ -115,6 +115,9 @@ function toolPage(l, kind) {
     `<title>${esc(page.title)}</title>\n<meta name="description" content="${esc(page.desc)}">\n<meta name="pw-root" content="${rel(here, '')}">\n${headLinks(l, kind, page)}\n<script type="application/ld+json">${JSON.stringify(jsonLd(l, kind)).replace(/</g, '\\u003c')}</script>\n${adHead(kind)}`);
   s = s.replace(/<!--H1-->[\s\S]*?<!--\/H1-->/, esc(page.h1)).replace(/<!--LEDE-->[\s\S]*?<!--\/LEDE-->/, esc(page.lede));
   s = s.replace('id="supportLink" href="support/"', `id="supportLink" href="${rel(here, dirOf(l, 'support'))}"`);
+  // the Ko-fi button on the start card: straight to the Ko-fi page, or left out when there is none
+  s = cfg.kofi ? s.replace('id="kofiLink" href="support/"', `id="kofiLink" href="https://ko-fi.com/${esc(cfg.kofi)}"`)
+    : s.replace(/<a class="kofi" id="kofiLink"[\s\S]*?<\/a>/, '');
   if (tool.maker) s = s.replace('<!--MAKER-->', `<div class="maker"><button class="btn primary big" id="bMaker" data-maker="${tool.maker}">${esc(page.cta)}</button><p class="hint">${esc(page.ctaHint || '')}</p></div>`);
   // interface words written into the page in its own language
   s = s.replace(/(<([a-z0-9]+)\b[^>]*\sdata-t="([^"]+)"[^>]*>)([^<]*)(<\/\2>)/g, (m, open, tag, key, _txt, close) => `${open}${esc(words[l][key] ?? words.en[key] ?? _txt)}${close}`);
@@ -224,6 +227,7 @@ h1{font-size:clamp(28px,5vw,38px);line-height:1.15;margin:0;letter-spacing:-.015
 .mail:hover{filter:brightness(1.07)}
 .mail svg{flex:none}
 .contact-foot{font-size:16px;color:var(--ink);margin:0}
+.kofi-foot a::before{content:"\\2615  "}
 .contact-foot a{color:var(--accent);font-weight:700;text-underline-offset:3px}
 a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>

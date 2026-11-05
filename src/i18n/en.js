@@ -439,6 +439,7 @@ export default {
   'batch.doneOne': 'Done: 1 file converted.',
   'batch.doneSome': '{ok} files converted, {bad} could not be. The list inside the .zip file says which.',
   'support.line': 'Pubwork is free for everyone. Help keep it that way',
+  'support.coffee': 'Buy us a coffee',
   // tools added for the feature check
   'tools.table': 'Table',
   'tools.wordart': 'WordArt',
