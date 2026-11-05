@@ -2,7 +2,7 @@
 
 **Open, edit, print and convert Microsoft Publisher (.pub) files in your web browser — free, with no upload.**
 
-Live: **https://pubwork.pages.dev**
+Live: **https://pubwork.app**
 
 Microsoft retired Publisher in October 2026. Schools, churches, clubs and small businesses still have years of
 newsletters, flyers, menus and certificates saved as `.pub` files. Pubwork opens them in any modern browser, on
