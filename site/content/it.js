@@ -76,8 +76,6 @@ export default {
       ['p', 'Contiamo le visite e alcune azioni nell’editor (per esempio «è stato aperto un file» o «è stato salvato un PDF») per capire cosa è utile. Per farlo usiamo Cloudflare Web Analytics e Umami, entrambi senza cookie. Viene inviato solo il nome dell’azione: mai il tuo file, il suo nome o il suo contenuto. Questi conteggi non ti identificano.'],
       ['h', 'Cookie e impostazioni'],
       ['p', 'Pubwork non usa cookie. Se scegli una lingua, viene ricordata nella memoria del tuo browser, che puoi cancellare quando vuoi.'],
-      ['h', 'Pubblicità'],
-      ['p', 'Alcune pagine di ricerca potrebbero mostrare pubblicità in futuro. L’applicazione non mostrerà mai annunci. Se la pubblicità verrà aggiunta, questa pagina sarà aggiornata prima e spiegherà cosa raccoglie il fornitore di annunci e come rifiutare.'],
       ['h', 'Minori'],
       ['p', 'Pubwork non raccoglie dati personali, né di minori né di nessun altro.'],
       ['h', 'Contatti'],

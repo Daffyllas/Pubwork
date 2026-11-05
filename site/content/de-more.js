@@ -96,7 +96,7 @@ export default {
         ['Kostenlos und privat', 'Kein Konto, kein Abo, und Ihre Dateien verlassen nie Ihren Computer.'],
       ],
       faq: [
-        ['Ist Pubwork wirklich kostenlos?', 'Ja. Öffnen, Bearbeiten, Drucken und Speichern sind kostenlos, ohne Wasserzeichen und ohne Begrenzung. Auf den Infoseiten der Website kann Werbung erscheinen, im Editor selbst nie.'],
+        ['Ist Pubwork wirklich kostenlos?', 'Ja. Öffnen, Bearbeiten, Drucken und Speichern sind kostenlos, ohne Wasserzeichen und ohne Begrenzung.'],
         ['Kann ich wieder als .pub speichern?', 'Nein. Microsoft hat nie veröffentlicht, wie man .pub-Dateien schreibt. Pubwork öffnet sie und speichert in einer eigenen Pubwork-Datei sowie als PDF, Word, LibreOffice Draw, JPG und PNG.'],
         ['Kann es so viel wie Publisher?', 'Für die alltägliche Arbeit (Flyer, Newsletter, Speisekarten, Karten, Etiketten, Broschüren, Serienbriefe) kann es das, wofür die meisten Menschen Publisher genutzt haben. Es bietet auch WordArt, Farbauszüge für Druckereien, Formatvorlagen, Masterseiten und Rechtschreibprüfung. Zurück als .pub speichern kann es nicht, und einige selten genutzte Publisher-Werkzeuge, etwa für Webseiten, fehlen.'],
         ['Muss ich etwas Neues lernen?', 'Sehr wenig. Die Seite ist in der Mitte, die Seitenübersicht links und die Einstellungen für das, was Sie angeklickt haben, rechts, genau wie in Publisher.'],
@@ -436,16 +436,17 @@ export default {
       ['p', 'Schreiben Sie an {email}.'],
     ],
   },
+  contactLabel: "Fragen oder Probleme? Schreiben Sie an",
   support: {
     title: 'Pubwork unterstützen | Pubwork',
     desc: 'Pubwork ist für alle kostenlos, ohne Konto und ohne Wasserzeichen. So bleibt es kostenlos, und so können Sie helfen.',
     h1: 'Helfen Sie mit, dass Pubwork kostenlos bleibt',
     body: [
       ['p', 'Pubwork ist für alle kostenlos: für Kirchengemeinden, Schulen, Vereine, kleine Geschäfte und Familien. Kein Konto, kein Wasserzeichen, keine Begrenzung, und Ihre Dateien verlassen nie Ihren Computer. Das bleibt so.'],
+      ['contact', "Fragen, Probleme oder Ideen?", "Schreiben Sie uns. Wir lesen jede Nachricht."],
       ['h', 'Wie es sich trägt'],
       ['ul', [
         'Kleine Spenden von Menschen, denen es nützt.',
-        'Werbung auf einigen Infoseiten dieser Website, nie im Editor selbst.',
         'Später: freiwillige Extras für Organisationen, etwa gemeinsame Vorlagen für eine ganze Schule oder Firma. Alles, was heute kostenlos ist, bleibt kostenlos.',
       ]],
       ['h', 'So können Sie helfen'],
@@ -455,7 +456,6 @@ export default {
         'Schicken Sie uns eine .pub-Datei, die nicht richtig aussieht (nur wenn Sie sie weitergeben dürfen), damit wir es für alle verbessern können.',
         'Helfen Sie, Pubwork in Ihre Sprache zu übersetzen.',
       ]],
-      ['p', 'Schreiben Sie an {email}.'],
     ],
   },
 
@@ -474,10 +474,6 @@ export default {
       ['h', 'Was die Website erhält'],
       ['p', 'Wie jede Website erhält der Server, der die Seiten von Pubwork ausliefert, bei jeder Anfrage technische Grunddaten wie IP-Adresse, Browsertyp und die angefragte Seite. Unser Hosting-Anbieter speichert sie kurzzeitig in Protokollen, um den Dienst am Laufen und sicher zu halten. Wir nutzen sie nicht, um Sie zu erkennen.'],
       ['p', 'Wir zählen Besuche und einige Aktionen im Editor (zum Beispiel „eine Datei wurde geöffnet“ oder „ein PDF wurde gespeichert“), um zu sehen, was nützlich ist. Dafür nutzen wir Cloudflare Web Analytics und Umami, beide ohne Cookies. Gesendet wird nur der Name der Aktion: nie Ihre Datei, ihr Name oder ihr Inhalt. Diese Zählungen identifizieren Sie nicht.'],
-      ['h', 'Werbung'],
-      ['adsOff', 'Pubwork zeigt derzeit keine Werbung. Der Editor wird nie Werbung zeigen. Kommt auf den Infoseiten Werbung hinzu, wird diese Seite vorher aktualisiert.'],
-      ['adsOn', 'Einige Infoseiten dieser Website (nicht der Editor und nie Ihre Dateien) zeigen Werbung von Google AdSense. Google und seine Partner können Cookies verwenden, um Werbung anzuzeigen und zu messen. Im Europäischen Wirtschaftsraum, im Vereinigten Königreich und in der Schweiz werden Sie vorher gefragt und können ablehnen. Mehr dazu und wie Sie personalisierte Werbung abschalten, finden Sie unter https://policies.google.com/technologies/ads und https://adssettings.google.com.'],
-      ['adsOn', 'Die Werbung sieht Ihre Dokumente nie: Sie werden nur in Ihrem Browser geöffnet, und nichts davon wird an Google oder an uns gesendet.'],
       ['h', 'Kinder'],
       ['p', 'Pubwork erfasst keine personenbezogenen Daten, weder von Kindern noch von anderen.'],
       ['h', 'Kontakt'],

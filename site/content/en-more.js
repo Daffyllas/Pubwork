@@ -96,7 +96,7 @@ export default {
         ['Free and private', 'No account, no subscription, and your files never leave your computer.'],
       ],
       faq: [
-        ['Is Pubwork really free?', 'Yes. Opening, editing, printing and saving are free, with no watermark and no limit. The website may show ads on its information pages, never inside the editor.'],
+        ['Is Pubwork really free?', 'Yes. Opening, editing, printing and saving are free, with no watermark and no limit.'],
         ['Can I save back to .pub?', 'No. Microsoft never published how to write .pub files. Pubwork opens them and saves in its own file, plus PDF, Word, LibreOffice Draw, JPG and PNG.'],
         ['Is it as powerful as Publisher?', 'For everyday work (flyers, newsletters, menus, cards, labels, booklets, mail merge) it does what most people used Publisher for. It also has WordArt, colour separations for print shops, styles, master pages and spell checking. It can’t save back to .pub, and a few rarely used Publisher tools, such as its web-page features, aren’t there.'],
         ['Do I have to learn something new?', 'Very little. The page is in the middle, pages on the left, and the options for what you clicked on the right, just as in Publisher.'],
@@ -436,16 +436,17 @@ export default {
       ['p', 'Write to {email}.'],
     ],
   },
+  contactLabel: "Questions or problems? Write to",
   support: {
     title: 'Support Pubwork | Pubwork',
     desc: 'Pubwork is free for everyone, with no account and no watermark. Here is how it stays free, and how you can help.',
     h1: 'Help keep Pubwork free',
     body: [
       ['p', 'Pubwork is free for everyone: churches, schools, clubs, small shops and families. No account, no watermark, no limits, and your files never leave your computer. It will stay that way.'],
+      ['contact', "Questions, problems or ideas?", "Write to us. We read every message."],
       ['h', 'How it pays for itself'],
       ['ul', [
         'A small donation from people who find it useful.',
-        'Advertising on some information pages of this website, never inside the editor itself.',
         'Later: optional extras for organisations, such as shared templates for a whole school or company. Everything that is free today stays free.',
       ]],
       ['h', 'Ways to help'],
@@ -455,7 +456,6 @@ export default {
         'Send us a .pub file that doesn’t look right (only if you are allowed to share it), so we can fix it for everyone.',
         'Help translate Pubwork into your language.',
       ]],
-      ['p', 'Write to {email}.'],
     ],
   },
 
@@ -474,10 +474,6 @@ export default {
       ['h', 'What the website receives'],
       ['p', 'Like every website, the server that delivers Pubwork’s pages receives basic technical details with each request, such as your IP address, browser type and the page asked for. Our hosting provider keeps these in logs for a short time to keep the service running and safe. We don’t use them to identify you.'],
       ['p', 'We count visits, and a few actions in the editor (for example “a file was opened” or “a PDF was saved”), to learn what is useful. We use Cloudflare Web Analytics and Umami for this, both without cookies. Only the name of the action is sent: never your file, its name or anything in it. These counts don’t identify you.'],
-      ['h', 'Advertising'],
-      ['adsOff', 'Pubwork shows no advertising at the moment. The editor will never show ads. If ads are added to the information pages, this page will be updated first.'],
-      ['adsOn', 'Some information pages of this website (not the editor, and never your files) show ads from Google AdSense. Google and its partners may use cookies to show ads and to measure them. In the European Economic Area, the UK and Switzerland, you are asked first, and you can say no. You can learn more and turn off personalised ads at https://policies.google.com/technologies/ads and https://adssettings.google.com.'],
-      ['adsOn', 'The ads never see your documents: they are opened only inside your browser, and nothing about them is sent to Google or to us.'],
       ['h', 'Children'],
       ['p', 'Pubwork collects no personal information, from children or anyone else.'],
       ['h', 'Contact'],

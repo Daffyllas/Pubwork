@@ -96,7 +96,7 @@ export default {
         ['Grátis e privado', 'Sem conta, sem assinatura, e seus arquivos nunca saem do seu computador.'],
       ],
       faq: [
-        ['O Pubwork é grátis mesmo?', 'Sim. Abrir, editar, imprimir e salvar é grátis, sem marca-d’água e sem limite. O site pode mostrar anúncios nas páginas de informação, nunca dentro do editor.'],
+        ['O Pubwork é grátis mesmo?', 'Sim. Abrir, editar, imprimir e salvar é grátis, sem marca-d’água e sem limite.'],
         ['Posso salvar de volta em .pub?', 'Não. A Microsoft nunca publicou como gravar arquivos .pub. O Pubwork abre esses arquivos e salva no seu próprio formato, além de PDF, Word, LibreOffice Draw, JPG e PNG.'],
         ['Ele é tão completo quanto o Publisher?', 'Para o dia a dia (panfletos, informativos, cardápios, cartões, etiquetas, livretos, mala direta), ele faz o que a maioria das pessoas fazia no Publisher. Ele também tem WordArt, separação de cores para gráficas, estilos, páginas mestras e corretor ortográfico. Não salva de volta em .pub, e faltam algumas ferramentas pouco usadas do Publisher, como os recursos de páginas web.'],
         ['Vou ter que aprender tudo de novo?', 'Muito pouco. A página fica no meio, as páginas à esquerda e as opções do que você clicou à direita, como no Publisher.'],
@@ -436,16 +436,17 @@ export default {
       ['p', 'Escreva para {email}.'],
     ],
   },
+  contactLabel: "Dúvidas ou problemas? Escreva para",
   support: {
     title: 'Apoie o Pubwork | Pubwork',
     desc: 'O Pubwork é grátis para todos, sem conta e sem marca-d’água. Veja como ele continua grátis e como você pode ajudar.',
     h1: 'Ajude a manter o Pubwork grátis',
     body: [
       ['p', 'O Pubwork é grátis para todos: igrejas, escolas, clubes, pequenas lojas e famílias. Sem conta, sem marca-d’água, sem limites, e seus arquivos nunca saem do seu computador. E vai continuar assim.'],
+      ['contact', "Dúvidas, problemas ou ideias?", "Escreva para nós. Lemos todas as mensagens."],
       ['h', 'Como ele se paga'],
       ['ul', [
         'Pequenas doações de quem acha o Pubwork útil.',
-        'Anúncios em algumas páginas de informação deste site, nunca dentro do editor.',
         'Mais para frente: extras opcionais para organizações, como modelos compartilhados por uma escola ou empresa inteira. Tudo o que é grátis hoje continua grátis.',
       ]],
       ['h', 'Como ajudar'],
@@ -455,7 +456,6 @@ export default {
         'Mande para nós um arquivo .pub que não aparece direito (só se você puder compartilhá-lo), para corrigirmos para todo mundo.',
         'Ajude a traduzir o Pubwork para o seu idioma.',
       ]],
-      ['p', 'Escreva para {email}.'],
     ],
   },
 
@@ -474,10 +474,6 @@ export default {
       ['h', 'O que o site recebe'],
       ['p', 'Como qualquer site, o servidor que entrega as páginas do Pubwork recebe dados técnicos básicos a cada pedido, como seu endereço IP, o tipo de navegador e a página pedida. Nosso provedor de hospedagem guarda esses dados por pouco tempo em registros, para manter o serviço funcionando com segurança. Não os usamos para identificar você.'],
       ['p', 'Contamos as visitas e algumas ações no editor (por exemplo, “um arquivo foi aberto” ou “um PDF foi salvo”) para saber o que é útil. Usamos para isso o Cloudflare Web Analytics e o Umami, ambos sem cookies. Só o nome da ação é enviado: nunca o seu arquivo, o nome dele ou o que há nele. Essas contagens não identificam você.'],
-      ['h', 'Publicidade'],
-      ['adsOff', 'No momento, o Pubwork não mostra nenhum anúncio. O editor nunca mostrará anúncios. Se forem adicionados anúncios às páginas de informação, esta página será atualizada antes.'],
-      ['adsOn', 'Algumas páginas de informação deste site (não o editor, e nunca os seus arquivos) mostram anúncios do Google AdSense. O Google e seus parceiros podem usar cookies para mostrar e medir os anúncios. No Espaço Econômico Europeu, no Reino Unido e na Suíça, você é consultado antes e pode recusar. Saiba mais e desative os anúncios personalizados em https://policies.google.com/technologies/ads e https://adssettings.google.com.'],
-      ['adsOn', 'Os anúncios nunca veem seus documentos: eles são abertos só dentro do seu navegador, e nada sobre eles é enviado ao Google ou a nós.'],
       ['h', 'Crianças'],
       ['p', 'O Pubwork não coleta dados pessoais, nem de crianças nem de ninguém.'],
       ['h', 'Contato'],

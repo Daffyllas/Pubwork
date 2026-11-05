@@ -94,6 +94,7 @@ const adSlot = (kind) => (adsOn && !NO_ADS.has(kind)
   ? `<div class="ad-wrap"><ins class="adsbygoogle ad-slot" data-ad-client="${esc(cfg.ads.client)}" data-ad-slot="${esc(cfg.ads.slot || '')}" data-ad-format="auto" data-full-width-responsive="true"></ins><script>try{if(document.documentElement.classList.contains('ads'))(adsbygoogle=window.adsbygoogle||[]).push({})}catch(e){}</script></div>`
   : '');
 
+const MAIL_ICON = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>`;
 function footer(l, kind, here) {
   const c = content[l];
   const link = (k) => `<li><a href="${rel(here, dirOf(l, k))}"${k === kind ? ' aria-current="page"' : ''}>${esc(c.nav[k])}</a></li>`;
@@ -102,7 +103,7 @@ function footer(l, kind, here) {
   const legal = ['support', 'privacy', 'terms'].map(link).join('');
   return `${groups}
 <section><h2>${esc(c.langTitle)}</h2><ul class="links">${langs}</ul></section>
-<footer class="sitefoot"><ul class="links">${legal}${cfg.source ? `<li><a href="${esc(cfg.source)}" rel="noopener">${esc(c.sourceLabel)}</a></li>` : ''}</ul><p>${esc(c.footer)}</p></footer>`;
+<footer class="sitefoot"><ul class="links">${legal}${cfg.source ? `<li><a href="${esc(cfg.source)}" rel="noopener">${esc(c.sourceLabel)}</a></li>` : ''}</ul>${cfg.email ? `<p class="contact-foot">${esc(c.contactLabel)} <a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a></p>` : ''}<p>${esc(c.footer)}</p></footer>`;
 }
 
 function toolPage(l, kind) {
@@ -165,6 +166,7 @@ function docPage(l, kind) {
     if (t === 'table') return `<div class="tablewrap" role="region" aria-label="${esc(d.h1)}" tabindex="0"><table class="cmp"><thead><tr>${x.map((h, i) => `<th scope="col"${i === 1 ? ' class="us"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${y.map((r) => `<tr><th scope="row">${esc(r[0])}</th>${r.slice(1).map((c, i) => `<td${i === 0 ? ' class="us"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     if (t === 'go') return `<p><a class="go" href="${rel(here, dirOf(l, y))}">${esc(x)}</a></p>`;
     if (t === 'source') return cfg.source ? `<p><a class="go" href="${esc(cfg.source)}" rel="noopener">${esc(x)}</a></p>` : '';
+    if (t === 'contact') return cfg.email ? `<section class="mailbox" aria-label="${esc(x)}"><h2>${esc(x)}</h2><a class="mail" href="mailto:${esc(cfg.email)}">${MAIL_ICON}<span>${esc(cfg.email)}</span></a><p>${esc(y)}</p></section>` : '';
     if (t === 'kofi') return cfg.kofi ? `<p><a class="go" href="https://ko-fi.com/${esc(cfg.kofi)}" rel="noopener">${esc(x)}</a></p>` : '';
     if (t === 'adsOn') return adsOn ? `<p>${esc(fill(x, v))}</p>` : '';
     if (t === 'adsOff') return adsOn ? '' : `<p>${esc(fill(x, v))}</p>`;
@@ -215,6 +217,14 @@ h1{font-size:clamp(28px,5vw,38px);line-height:1.15;margin:0;letter-spacing:-.015
 .links a[aria-current]{color:var(--ink);text-decoration:none}
 .sitefoot{border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:10px}
 .ad-wrap{min-height:120px}
+.mailbox{margin:22px 0 8px;padding:24px 22px;border-radius:16px;background:var(--accent-soft);border:2px solid var(--accent);text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.doc .mailbox h2{margin:0;font-size:clamp(22px,4vw,28px);line-height:1.2}
+.doc .mailbox p{margin:0;color:var(--muted);font-size:16px}
+.mail{display:inline-flex;align-items:center;justify-content:center;gap:12px;max-width:100%;min-height:60px;padding:10px 26px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:clamp(19px,5vw,28px);text-decoration:none;overflow-wrap:anywhere;box-shadow:0 6px 20px rgba(0,0,0,.12)}
+.mail:hover{filter:brightness(1.07)}
+.mail svg{flex:none}
+.contact-foot{font-size:16px;color:var(--ink);margin:0}
+.contact-foot a{color:var(--accent);font-weight:700;text-underline-offset:3px}
 a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
