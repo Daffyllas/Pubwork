@@ -22,6 +22,7 @@ import './mastersguides.css';
 import { clone, uid, reId, blankDocument, PAGE_SIZES, transformItem, scaleStyle, History } from './editor/model.js';
 import { toPubwork, fromPubwork, isZip, keepLocally, listLocal, loadLocal, forgetLocal, trimLocal } from './editor/file.js';
 import { track } from './track.js';
+import { askBeforeDownload, setupFloating } from './tip.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -56,6 +57,8 @@ class App {
     $('folder').onchange = (e) => { const fs = [...e.target.files]; e.target.value = ''; this.openMany(fs); };
     // the "support" link goes to the website's page, which a page inside claude.ai doesn't have
     if (IN_ARTIFACT) $('supportLine').hidden = true; // the website's pages aren't part of the claude.ai page
+    // the ☕ Support button in the corner (tip.js)
+    this.tipFloat = setupFloating({ busyWithDocument: () => !!this.doc });
     // search pages like "free flyer maker" start with the matching templates
     const maker = $('bMaker'); if (maker) maker.onclick = () => (maker.dataset.maker === 'calendar' ? this.openCalMaker() : this.openGallery(maker.dataset.maker));
 
@@ -170,7 +173,7 @@ class App {
         const alt = document.querySelector(`.seo a[hreflang="${sel.value}"]`);
         if (alt && document.documentElement.hasAttribute('data-fixed-lang')) { location.href = alt.href; return; } // the same page in that language
         try { localStorage.setItem('pw-lang', sel.value); } catch { /* fine without */ }
-        this.lang = setLang(sel.value); document.documentElement.lang = this.lang; translatePage(); this.updateSavePanel(); this.fillNewSizes();
+        this.lang = setLang(sel.value); document.documentElement.lang = this.lang; translatePage(); this.tipFloat?.refresh(); this.updateSavePanel(); this.fillNewSizes();
         this.renderRecent(); this.renderTabs();
         if (this.doc) { this.panel.show(); this.renderThumbs(); }
       };
@@ -999,7 +1002,8 @@ class App {
       await this.settled;
       const out = await this.exportOut(format, { size, pages, onProgress: progress, outline });
       window.__lastSave = out; // tests read the result here
-      const how = await download(out.blob, out.name);
+      this.busy(false); // the file is ready: a short thank-you window, then the download (tip.js)
+      const how = await askBeforeDownload({ format: FORMAT_NAME[format], give: () => download(out.blob, out.name) });
       if (how === 'saved') track('save', { format, size: ['jpg', 'png'].includes(format) ? size : undefined, pages: (pages || this.pageEls).length });
       const pics = out.report?.picturePages;
       if (how === 'saved') this.toast(pics ? t('save.donePictures', { name: out.name, n: pics }) : t('save.done', { name: out.name }), 6000);

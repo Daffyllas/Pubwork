@@ -1,0 +1,101 @@
+// Asking for a coffee on Ko-fi, kindly:
+// 1. askBeforeDownload: when a file is ready, a small "Your PDF is ready" window with Download and a coffee
+//    button. Every way out of it (Download, coffee, ✕, Esc) still gives the person their file.
+// 2. the floating "☕ Support" button in the corner, whose little card opens by itself once a week on the start
+//    screen (never while someone is working on a document).
+// Both stay away when the site has no Ko-fi page, inside a claude.ai artifact, and for automated test runs.
+import { t } from './i18n/index.js';
+import { track } from './track.js';
+
+const KOFI = document.querySelector('meta[name="pubwork-kofi"]')?.content?.trim() || '';
+const URL_KOFI = KOFI ? `https://ko-fi.com/${encodeURIComponent(KOFI)}` : '';
+const OFF = !KOFI || !!window.claude?.use || navigator.webdriver && !/[?&]tips\b/.test(location.search);
+const WEEK = 7 * 864e5, SUPPORTED_FOR = 90 * 864e5;
+
+const get = (k) => { try { return Number(localStorage.getItem(k)) || 0; } catch { return 0; } };
+const set = (k, v) => { try { localStorage.setItem(k, String(v)); } catch { /* fine without */ } };
+const supportedRecently = () => Date.now() - get('pw-tip-supported') < SUPPORTED_FOR;
+const el = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+const CUP = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M7 2v2M11 2v2M15 2v2"/></svg>';
+const openKofi = (where) => { track('tip-coffee', { where }); set('pw-tip-supported', Date.now()); window.open(URL_KOFI, '_blank', 'noopener'); };
+
+// -> resolves once the person has chosen; give(file) is then called while the click is still "fresh",
+// so the browser lets the download start
+export function askBeforeDownload({ format, give }) {
+  if (OFF || supportedRecently()) return give();
+  track('tip-shown', { where: 'save' });
+  return new Promise((resolve) => {
+    const prev = document.activeElement;
+    const box = el(`<div class="tipwrap" role="presentation"><div class="tipbox" role="dialog" aria-modal="true" aria-labelledby="tipTitle">
+      <button class="tipx" type="button" aria-label="${esc(t('tip.close'))}">✕</button>
+      <div class="tipok" aria-hidden="true">✓</div>
+      <h2 id="tipTitle">${esc(t('tip.ready', { format }))}</h2>
+      <p>${esc(t('tip.text'))}</p>
+      <button class="btn primary tipgo" type="button"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M6 11l6 6 6-6M4 21h16"/></svg>${esc(t('tip.download', { format }))}</button>
+      <button class="btn tipcoffee" type="button">${CUP}${esc(t('tip.coffee'))}</button>
+      <button class="tiplink" type="button">${esc(t('tip.already'))}</button>
+    </div></div>`);
+    let done = false;
+    const finish = async (how) => {
+      if (done) return; done = true;
+      if (how === 'coffee') openKofi('save');
+      if (how === 'already') { set('pw-tip-supported', Date.now()); track('tip-already'); }
+      const result = give(); // first, while the click still counts
+      box.remove(); document.removeEventListener('keydown', onKey, true);
+      try { prev?.focus?.({ preventScroll: true }); } catch { /* gone */ }
+      resolve(await result);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); finish('close'); }
+      else if (e.key === 'Tab') { // keep the keyboard inside the window
+        const f = [...box.querySelectorAll('button')], i = f.indexOf(document.activeElement);
+        if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+      }
+    };
+    box.querySelector('.tipgo').onclick = () => finish('download');
+    box.querySelector('.tipcoffee').onclick = () => finish('coffee');
+    box.querySelector('.tipx').onclick = () => finish('close');
+    box.querySelector('.tiplink').onclick = () => finish('already');
+    box.addEventListener('click', (e) => { if (e.target === box) finish('close'); });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(box);
+    box.querySelector('.tipgo').focus({ preventScroll: true });
+  });
+}
+
+// the "☕ Support" button in the corner and its card
+export function setupFloating({ busyWithDocument }) {
+  if (OFF) return;
+  const wrap = el(`<div class="tipfab-wrap">
+    <div class="tipcard" id="tipCard" hidden role="dialog" aria-labelledby="tipCardTitle">
+      <button class="tipx" type="button" aria-label="${esc(t('tip.close'))}">✕</button>
+      <div class="tiphead"><img src="/maker.png" alt="" width="48" height="48"><h2 id="tipCardTitle">${esc(t('tip.cardTitle'))}</h2></div>
+      <p>${esc(t('tip.cardText'))}</p>
+      <a class="btn primary" href="${URL_KOFI}" target="_blank" rel="noopener">${CUP}${esc(t('tip.cardButton'))}</a>
+    </div>
+    <button class="tipfab" type="button" aria-expanded="false" aria-controls="tipCard">${CUP}<span>${esc(t('tip.fab'))}</span></button>
+  </div>`);
+  const card = wrap.querySelector('.tipcard'), fab = wrap.querySelector('.tipfab');
+  const show = (open, why) => {
+    card.hidden = !open; fab.setAttribute('aria-expanded', String(open));
+    if (open) { set('pw-tip-card', Date.now()); track('tip-shown', { where: why }); }
+  };
+  fab.onclick = () => show(card.hidden, 'button');
+  card.querySelector('.tipx').onclick = () => { show(false); fab.focus({ preventScroll: true }); };
+  card.querySelector('a').onclick = () => { track('tip-coffee', { where: 'card' }); set('pw-tip-supported', Date.now()); show(false); };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !card.hidden) show(false); });
+  document.body.appendChild(wrap);
+  // once a week, a few seconds after the site opens, and only while nobody is working on a document
+  if (Date.now() - get('pw-tip-card') > WEEK && !supportedRecently()) {
+    setTimeout(() => { if (!busyWithDocument() && card.hidden && !document.querySelector('.tipwrap')) show(true, 'open'); }, 4000);
+  }
+  return { refresh: (code) => { // after the language changes
+    fab.querySelector('span').textContent = t('tip.fab');
+    card.querySelector('h2').textContent = t('tip.cardTitle');
+    card.querySelector('p').textContent = t('tip.cardText');
+    card.querySelector('a').lastChild.textContent = t('tip.cardButton');
+    card.querySelector('.tipx').setAttribute('aria-label', t('tip.close'));
+    void code;
+  } };
+}

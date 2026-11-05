@@ -115,6 +115,7 @@ function toolPage(l, kind) {
     `<title>${esc(page.title)}</title>\n<meta name="description" content="${esc(page.desc)}">\n<meta name="pw-root" content="${rel(here, '')}">\n${headLinks(l, kind, page)}\n<script type="application/ld+json">${JSON.stringify(jsonLd(l, kind)).replace(/</g, '\\u003c')}</script>\n${adHead(kind)}`);
   s = s.replace(/<!--H1-->[\s\S]*?<!--\/H1-->/, esc(page.h1)).replace(/<!--LEDE-->[\s\S]*?<!--\/LEDE-->/, esc(page.lede));
   s = s.replace('id="supportLink" href="support/"', `id="supportLink" href="${rel(here, dirOf(l, 'support'))}"`);
+  s = s.replace('<meta name="pubwork-kofi" content="">', cfg.kofi ? `<meta name="pubwork-kofi" content="${esc(cfg.kofi)}">` : '');
   // the Ko-fi button on the start card: straight to the Ko-fi page, or left out when there is none
   s = cfg.kofi ? s.replace('id="kofiLink" href="support/"', `id="kofiLink" href="https://ko-fi.com/${esc(cfg.kofi)}"`)
     : s.replace(/<a class="kofi" id="kofiLink"[\s\S]*?<\/a>/, '');

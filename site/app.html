@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="pubwork-kofi" content="">
 <title>Pubwork</title>
 <meta name="description" content="Open Microsoft Publisher (.pub) files in your browser, free. Nothing is uploaded.">
 <!--HEAD-->
@@ -112,6 +113,34 @@ main{flex:1;display:flex;min-height:0}
 #busy .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 22px;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.12)}
 .spin{width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* asking for a coffee (src/tip.js) */
+.tipwrap{position:fixed;inset:0;z-index:60;background:rgba(20,14,10,.5);display:grid;place-items:center;padding:16px}
+.tipbox{position:relative;width:min(460px,100%);background:var(--panel);color:var(--ink);border-radius:20px;padding:30px 28px 22px;box-shadow:0 30px 80px rgba(0,0,0,.35);text-align:center;display:flex;flex-direction:column;gap:12px}
+.tipbox h2{margin:0;font-size:24px;line-height:1.2}
+.tipbox p{margin:0 0 6px;color:var(--muted);font-size:15.5px;line-height:1.5}
+.tipok{width:58px;height:58px;margin:0 auto 4px;border-radius:50%;background:color-mix(in srgb,#1e7d3a 14%,var(--panel));color:#1e7d3a;display:grid;place-items:center;font-size:30px;font-weight:700}
+.tipbox .btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;font-size:16.5px;font-weight:700;border-radius:12px}
+.tipcoffee{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.tipcoffee:hover{background:var(--accent);color:var(--accent-ink)}
+.tiplink{background:none;border:0;color:var(--muted);font-size:13.5px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:4px;margin-top:2px}
+.tipx{position:absolute;top:10px;right:10px;width:38px;height:38px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:18px;cursor:pointer}
+.tipx:hover{background:var(--accent-soft);color:var(--ink)}
+.tipfab-wrap{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:15;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
+.tipfab-wrap>*{pointer-events:auto}
+.tipfab{display:inline-flex;align-items:center;gap:8px;height:50px;padding:0 20px 0 16px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:800;font-size:15.5px;cursor:pointer;box-shadow:0 10px 26px color-mix(in srgb,var(--accent) 45%,transparent)}
+.tipfab:hover{filter:brightness(1.08)}
+.tipcard{position:relative;width:min(320px,calc(100vw - 36px));background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:10px}
+.tipcard[hidden]{display:none}
+.tiphead{display:flex;align-items:center;gap:12px;padding-right:30px}
+.tiphead img{width:48px;height:48px;border-radius:50%;border:2px solid var(--accent);flex:none}
+.tipcard h2{margin:0;font-size:17px}
+.tipcard p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.45}
+.tipcard .btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font-weight:700;text-decoration:none;border-radius:12px}
+body.has-sel .tipfab-wrap,body:has(.gallery:not([hidden])) .tipfab-wrap,body:has(#busy:not([hidden])) .tipfab-wrap{display:none}
+body.has-doc .tipfab span{display:none}body.has-doc .tipfab{width:52px;padding:0;justify-content:center}
+@media (min-width:901px){body.has-doc .tipfab-wrap{right:308px}}
+@media (max-width:700px){.tipfab span{display:none}.tipfab{width:52px;padding:0;justify-content:center}.tipfab-wrap{right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
+@media print{.tipfab-wrap,.tipwrap{display:none!important}}
 #toast{overflow-wrap:anywhere;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:10px;max-width:min(560px,92vw);z-index:30;font-size:14.5px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 #toast[hidden]{display:none}
 .panel{position:fixed;top:62px;right:14px;width:min(380px,calc(100vw - 28px));max-height:calc(100% - 80px);overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.18);padding:18px;z-index:25;display:flex;flex-direction:column;gap:14px}
