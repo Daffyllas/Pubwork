@@ -103,7 +103,7 @@ function footer(l, kind, here) {
   const legal = ['support', 'privacy', 'terms'].map(link).join('');
   return `${groups}
 <section><h2>${esc(c.langTitle)}</h2><ul class="links">${langs}</ul></section>
-<footer class="sitefoot"><ul class="links">${legal}${cfg.source ? `<li><a href="${esc(cfg.source)}" rel="noopener">${esc(c.sourceLabel)}</a></li>` : ''}${cfg.kofi ? `<li class="kofi-foot"><a href="https://ko-fi.com/${esc(cfg.kofi)}" rel="noopener" target="_blank">${esc(words[l]['support.coffee'])}</a></li>` : ''}</ul>${cfg.email ? `<p class="contact-foot">${esc(c.contactLabel)} <a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a></p>` : ''}<p>${esc(c.footer)}</p></footer>`;
+<footer class="sitefoot"><ul class="links">${legal}${cfg.source ? `<li><a href="${esc(cfg.source)}" rel="noopener">${esc(c.sourceLabel)}</a></li>` : ''}${cfg.maker?.url ? `<li><a href="${esc(cfg.maker.url)}" rel="noopener" target="_blank">${esc(c.madeBy)} ${esc(cfg.maker.name)} ↗</a></li>` : ''}${cfg.kofi ? `<li class="kofi-foot"><a href="https://ko-fi.com/${esc(cfg.kofi)}" rel="noopener" target="_blank">${esc(words[l]['support.coffee'])}</a></li>` : ''}</ul>${cfg.email ? `<p class="contact-foot">${esc(c.contactLabel)} <a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a></p>` : ''}<p>${esc(c.footer)}</p></footer>`;
 }
 
 function toolPage(l, kind) {
@@ -145,7 +145,7 @@ const faqOf = (l, kind) => content[l].pages[kind].faq || content[l].faq;
 function jsonLd(l, kind) {
   const page = content[l].pages[kind];
   return [
-    { '@context': 'https://schema.org', '@type': 'WebApplication', name: cfg.name, url: urlOf(l, kind), description: page.desc, applicationCategory: 'DesignApplication', operatingSystem: 'Windows, macOS, ChromeOS, Linux, iPadOS, Android', inLanguage: l, offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' } },
+    { '@context': 'https://schema.org', '@type': 'WebApplication', name: cfg.name, url: urlOf(l, kind), description: page.desc, applicationCategory: 'DesignApplication', operatingSystem: 'Windows, macOS, ChromeOS, Linux, iPadOS, Android', inLanguage: l, offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' }, ...(cfg.maker?.url ? { author: { '@type': 'Person', name: cfg.maker.name, url: cfg.maker.url } } : {}) },
     { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqOf(l, kind).map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) },
   ];
 }
@@ -170,6 +170,7 @@ function docPage(l, kind) {
     if (t === 'table') return `<div class="tablewrap" role="region" aria-label="${esc(d.h1)}" tabindex="0"><table class="cmp"><thead><tr>${x.map((h, i) => `<th scope="col"${i === 1 ? ' class="us"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${y.map((r) => `<tr><th scope="row">${esc(r[0])}</th>${r.slice(1).map((c, i) => `<td${i === 0 ? ' class="us"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     if (t === 'go') return `<p><a class="go" href="${rel(here, dirOf(l, y))}">${esc(x)}</a></p>`;
     if (t === 'source') return cfg.source ? `<p><a class="go" href="${esc(cfg.source)}" rel="noopener">${esc(x)}</a></p>` : '';
+    if (t === 'maker') return cfg.maker?.url ? `<section class="maker"><img src="${rel(here, '')}maker.png" alt="" width="72" height="72"><div><h2>${esc(x)}</h2><p>${esc(y)}</p><a href="${esc(cfg.maker.url)}" rel="noopener" target="_blank">${esc(cfg.maker.url.replace(/^https?:\/\/|\/$/g, ''))} ↗</a></div></section>` : '';
     if (t === 'contact') return cfg.email ? `<section class="mailbox" aria-label="${esc(x)}"><h2>${esc(x)}</h2><a class="mail" href="mailto:${esc(cfg.email)}">${MAIL_ICON}<span>${esc(cfg.email)}</span></a><p>${esc(y)}</p></section>` : '';
     if (t === 'kofi') return cfg.kofi ? `<p><a class="go" href="https://ko-fi.com/${esc(cfg.kofi)}" rel="noopener">${esc(x)}</a></p>` : '';
     if (t === 'adsOn') return adsOn ? `<p>${esc(fill(x, v))}</p>` : '';
@@ -178,7 +179,7 @@ function docPage(l, kind) {
     return `<p>${esc(fill(x, v))}</p>`;
   }).join('\n');
   const home = rel(here, dirOf(l, 'home'));
-  const ld = DOCS.slice(0, 5).includes(kind) ? `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: d.h1, description: d.desc, inLanguage: l, dateModified: cfg.updated, author: { '@type': 'Organization', name: cfg.name }, publisher: { '@type': 'Organization', name: cfg.name } }).replace(/</g, '\\u003c')}</script>` : '';
+  const ld = DOCS.slice(0, 5).includes(kind) ? `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: d.h1, description: d.desc, inLanguage: l, dateModified: cfg.updated, author: cfg.maker?.url ? { '@type': 'Person', name: cfg.maker.name, url: cfg.maker.url } : { '@type': 'Organization', name: cfg.name }, publisher: { '@type': 'Organization', name: cfg.name } }).replace(/</g, '\\u003c')}</script>` : '';
   return `<!doctype html>
 <html lang="${l}">
 <head>
@@ -221,6 +222,11 @@ h1{font-size:clamp(28px,5vw,38px);line-height:1.15;margin:0;letter-spacing:-.015
 .links a[aria-current]{color:var(--ink);text-decoration:none}
 .sitefoot{border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:10px}
 .ad-wrap{min-height:120px}
+.maker{display:flex;gap:18px;align-items:center;margin:28px 0 8px;padding:20px 22px;border:1px solid var(--line);border-radius:16px;background:var(--panel)}
+.maker img{width:72px;height:72px;border-radius:50%;border:3px solid var(--accent);flex:none}
+.doc .maker h2{margin:0 0 4px;font-size:20px}
+.doc .maker p{margin:0 0 6px;color:var(--muted)}
+.maker a{color:var(--accent);font-weight:700;text-underline-offset:3px}
 .mailbox{margin:22px 0 8px;padding:24px 22px;border-radius:16px;background:var(--accent-soft);border:2px solid var(--accent);text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
 .doc .mailbox h2{margin:0;font-size:clamp(22px,4vw,28px);line-height:1.2}
 .doc .mailbox p{margin:0;color:var(--muted);font-size:16px}

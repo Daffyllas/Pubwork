@@ -436,6 +436,7 @@ export default {
       ['p', 'Write to {email}.'],
     ],
   },
+  madeBy: "Made by",
   contactLabel: "Questions or problems? Write to",
   support: {
     title: 'Support Pubwork | Pubwork',
@@ -456,6 +457,7 @@ export default {
         'Send us a .pub file that doesn’t look right (only if you are allowed to share it), so we can fix it for everyone.',
         'Help translate Pubwork into your language.',
       ]],
+      ['maker', "Who makes Pubwork", "Hi, I’m GIGACHU, a former chef who now builds games and free tools. Pubwork is made by one person, in my free time. You can see my other projects on my website."],
     ],
   },
 
