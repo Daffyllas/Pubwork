@@ -13,11 +13,11 @@ const SUPPORTED_FOR = 90 * 864e5;
 
 const get = (k) => { try { return Number(localStorage.getItem(k)) || 0; } catch { return 0; } };
 const set = (k, v) => { try { localStorage.setItem(k, String(v)); } catch { /* fine without */ } };
-const supportedRecently = () => Date.now() - get('pw-tip-supported') < SUPPORTED_FOR;
+const supportedRecently = () => Date.now() - get('pw-tip-already') < SUPPORTED_FOR;
 const el = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstElementChild; };
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const CUP = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M7 2v2M11 2v2M15 2v2"/></svg>';
-const openKofi = (where) => { track('tip-coffee', { where }); set('pw-tip-supported', Date.now()); window.open(URL_KOFI, '_blank', 'noopener'); };
+const openKofi = (where) => { track('tip-coffee', { where }); window.open(URL_KOFI, '_blank', 'noopener'); };
 
 // -> resolves once the person has chosen; give(file) is then called while the click is still "fresh",
 // so the browser lets the download start
@@ -39,7 +39,7 @@ export function askBeforeDownload({ format, give }) {
     const finish = async (how) => {
       if (done) return; done = true;
       if (how === 'coffee') openKofi('save');
-      if (how === 'already') { set('pw-tip-supported', Date.now()); track('tip-already'); }
+      if (how === 'already') { set('pw-tip-already', Date.now()); track('tip-already'); }
       const result = give(); // first, while the click still counts
       box.remove(); document.removeEventListener('keydown', onKey, true);
       try { prev?.focus?.({ preventScroll: true }); } catch { /* gone */ }
@@ -64,12 +64,10 @@ export function askBeforeDownload({ format, give }) {
 }
 
 // the "Enjoying Pubwork?" message that pops up by itself when the start page opens (no button in the corner).
-// It pops up on every visit (once per visit, so moving between pages doesn't bring it back), and goes away
-// as soon as a document is opened.
+// It pops up every time a start page opens, and goes away as soon as a document is opened.
 export function setupFloating({ busyWithDocument }) {
   if (OFF) return;
-  let seen = false; try { seen = sessionStorage.getItem('pw-tip-card') === '1'; } catch { /* fine */ }
-  if (seen || supportedRecently()) return;
+  if (supportedRecently()) return; // they told us they've already supported Pubwork
   const card = el(`<div class="tipcard" id="tipCard" hidden role="dialog" aria-labelledby="tipCardTitle">
       <div class="tiphead"><img src="/maker.png" alt="" width="48" height="48"><h2 id="tipCardTitle">${esc(t('tip.cardTitle'))}</h2></div>
       <p>${esc(t('tip.cardText'))}</p>
@@ -78,13 +76,13 @@ export function setupFloating({ busyWithDocument }) {
     </div>`);
   const close = () => { card.remove(); watch.disconnect(); };
   card.querySelector('.tiplater').onclick = close;
-  card.querySelector('a').onclick = () => { track('tip-coffee', { where: 'card' }); set('pw-tip-supported', Date.now()); close(); };
+  card.querySelector('a').onclick = () => { track('tip-coffee', { where: 'card' }); close(); };
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && card.isConnected && !card.hidden && !document.querySelector('.tipwrap')) close(); });
   // a document was opened: the message has done its job on the start page
   const watch = new MutationObserver(() => { if (busyWithDocument() && card.isConnected) { card.remove(); watch.disconnect(); } });
   watch.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   document.body.appendChild(card);
-  setTimeout(() => { if (card.isConnected && !busyWithDocument()) { card.hidden = false; track('tip-shown', { where: 'open' }); try { sessionStorage.setItem('pw-tip-card', '1'); } catch { /* fine */ } } }, 800);
+  setTimeout(() => { if (card.isConnected && !busyWithDocument()) { card.hidden = false; track('tip-shown', { where: 'open' }); } }, 800);
   return { refresh: () => { // after the language changes
     card.querySelector('h2').textContent = t('tip.cardTitle');
     card.querySelector('p').textContent = t('tip.cardText');
