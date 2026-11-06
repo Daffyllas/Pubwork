@@ -469,6 +469,7 @@ export default {
   'tip.text': "Pubwork ist kostenlos, ohne Werbung und ohne Konto. Wenn es Ihnen geholfen hat, hilft ein Kaffee, dass es so bleibt.",
   'tip.download': "{format} herunterladen",
   'tip.coffee': "Kaffee spendieren",
+  'tip.later': "Vielleicht später",
   'tip.already': "Schon unterstützt? 3 Monate lang ausblenden",
   'tip.close': "Schließen",
   'tip.fab': "Unterstützen",

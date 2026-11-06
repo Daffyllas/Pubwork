@@ -1,8 +1,7 @@
 // Asking for a coffee on Ko-fi, kindly:
 // 1. askBeforeDownload: when a file is ready, a small "Your PDF is ready" window with Download and a coffee
 //    button. Every way out of it (Download, coffee, ✕, Esc) still gives the person their file.
-// 2. the floating "☕ Support" button in the corner, whose little card opens by itself once a week on the start
-//    screen (never while someone is working on a document).
+// 2. the "Enjoying Pubwork?" message that pops up by itself on the start page (never while someone is working on a document).
 // Both stay away when the site has no Ko-fi page, inside a claude.ai artifact, and for automated test runs.
 import { t } from './i18n/index.js';
 import { track } from './track.js';
@@ -10,7 +9,7 @@ import { track } from './track.js';
 const KOFI = document.querySelector('meta[name="pubwork-kofi"]')?.content?.trim() || '';
 const URL_KOFI = KOFI ? `https://ko-fi.com/${encodeURIComponent(KOFI)}` : '';
 const OFF = !KOFI || !!window.claude?.use || navigator.webdriver && !/[?&]tips\b/.test(location.search);
-const WEEK = 7 * 864e5, SUPPORTED_FOR = 90 * 864e5;
+const SUPPORTED_FOR = 90 * 864e5;
 
 const get = (k) => { try { return Number(localStorage.getItem(k)) || 0; } catch { return 0; } };
 const set = (k, v) => { try { localStorage.setItem(k, String(v)); } catch { /* fine without */ } };
@@ -64,38 +63,32 @@ export function askBeforeDownload({ format, give }) {
   });
 }
 
-// the "☕ Support" button in the corner and its card
+// the "Enjoying Pubwork?" message that pops up by itself when the start page opens (no button in the corner).
+// It pops up on every visit (once per visit, so moving between pages doesn't bring it back), and goes away
+// as soon as a document is opened.
 export function setupFloating({ busyWithDocument }) {
   if (OFF) return;
-  const wrap = el(`<div class="tipfab-wrap">
-    <div class="tipcard" id="tipCard" hidden role="dialog" aria-labelledby="tipCardTitle">
-      <button class="tipx" type="button" aria-label="${esc(t('tip.close'))}">✕</button>
+  let seen = false; try { seen = sessionStorage.getItem('pw-tip-card') === '1'; } catch { /* fine */ }
+  if (seen || supportedRecently()) return;
+  const card = el(`<div class="tipcard" id="tipCard" hidden role="dialog" aria-labelledby="tipCardTitle">
       <div class="tiphead"><img src="/maker.png" alt="" width="48" height="48"><h2 id="tipCardTitle">${esc(t('tip.cardTitle'))}</h2></div>
       <p>${esc(t('tip.cardText'))}</p>
-      <a class="btn primary" href="${URL_KOFI}" target="_blank" rel="noopener">${CUP}${esc(t('tip.cardButton'))}</a>
-    </div>
-    <button class="tipfab" type="button" aria-expanded="false" aria-controls="tipCard">${CUP}<span>${esc(t('tip.fab'))}</span></button>
-  </div>`);
-  const card = wrap.querySelector('.tipcard'), fab = wrap.querySelector('.tipfab');
-  const show = (open, why) => {
-    card.hidden = !open; fab.setAttribute('aria-expanded', String(open));
-    if (open) { set('pw-tip-card', Date.now()); track('tip-shown', { where: why }); }
-  };
-  fab.onclick = () => show(card.hidden, 'button');
-  card.querySelector('.tipx').onclick = () => { show(false); fab.focus({ preventScroll: true }); };
-  card.querySelector('a').onclick = () => { track('tip-coffee', { where: 'card' }); set('pw-tip-supported', Date.now()); show(false); };
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !card.hidden) show(false); });
-  document.body.appendChild(wrap);
-  // once a week, a few seconds after the site opens, and only while nobody is working on a document
-  if (Date.now() - get('pw-tip-card') > WEEK && !supportedRecently()) {
-    setTimeout(() => { if (!busyWithDocument() && card.hidden && !document.querySelector('.tipwrap')) show(true, 'open'); }, 4000);
-  }
-  return { refresh: (code) => { // after the language changes
-    fab.querySelector('span').textContent = t('tip.fab');
+      <a class="btn primary" href="${URL_KOFI}" target="_blank" rel="noopener">${CUP}<span>${esc(t('tip.coffee'))}</span></a>
+      <button class="btn tiplater" type="button">${esc(t('tip.later'))}</button>
+    </div>`);
+  const close = () => { card.remove(); watch.disconnect(); };
+  card.querySelector('.tiplater').onclick = close;
+  card.querySelector('a').onclick = () => { track('tip-coffee', { where: 'card' }); set('pw-tip-supported', Date.now()); close(); };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && card.isConnected && !card.hidden && !document.querySelector('.tipwrap')) close(); });
+  // a document was opened: the message has done its job on the start page
+  const watch = new MutationObserver(() => { if (busyWithDocument() && card.isConnected) { card.remove(); watch.disconnect(); } });
+  watch.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  document.body.appendChild(card);
+  setTimeout(() => { if (card.isConnected && !busyWithDocument()) { card.hidden = false; track('tip-shown', { where: 'open' }); try { sessionStorage.setItem('pw-tip-card', '1'); } catch { /* fine */ } } }, 800);
+  return { refresh: () => { // after the language changes
     card.querySelector('h2').textContent = t('tip.cardTitle');
     card.querySelector('p').textContent = t('tip.cardText');
-    card.querySelector('a').lastChild.textContent = t('tip.cardButton');
-    card.querySelector('.tipx').setAttribute('aria-label', t('tip.close'));
-    void code;
+    card.querySelector('a span').textContent = t('tip.coffee');
+    card.querySelector('.tiplater').textContent = t('tip.later');
   } };
 }

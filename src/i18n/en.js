@@ -444,6 +444,7 @@ export default {
   'tip.text': "Pubwork is free, with no ads and no account. If it saved your day, a coffee helps keep it that way.",
   'tip.download': "Download {format}",
   'tip.coffee': "Buy me a coffee",
+  'tip.later': "Maybe later",
   'tip.already': "Already supported Pubwork? Hide this for 3 months",
   'tip.close': "Close",
   'tip.fab': "Support",

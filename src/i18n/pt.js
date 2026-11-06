@@ -469,6 +469,7 @@ export default {
   'tip.text': "O Pubwork é grátis, sem anúncios e sem conta. Se ele ajudou você, um café ajuda a mantê-lo assim.",
   'tip.download': "Baixar {format}",
   'tip.coffee': "Me pague um café",
+  'tip.later': "Talvez mais tarde",
   'tip.already': "Já apoiou o Pubwork? Ocultar por 3 meses",
   'tip.close': "Fechar",
   'tip.fab': "Apoiar",
