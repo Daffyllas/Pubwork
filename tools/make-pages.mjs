@@ -103,7 +103,7 @@ function footer(l, kind, here) {
   const legal = ['support', 'privacy', 'terms'].map(link).join('');
   return `${groups}
 <section><h2>${esc(c.langTitle)}</h2><ul class="links">${langs}</ul></section>
-<footer class="sitefoot"><ul class="links">${legal}${cfg.source ? `<li><a href="${esc(cfg.source)}" rel="noopener">${esc(c.sourceLabel)}</a></li>` : ''}${cfg.maker?.url ? `<li><a href="${esc(cfg.maker.url)}" rel="noopener" target="_blank">${esc(c.madeBy)} ${esc(cfg.maker.name)} ↗</a></li>` : ''}${cfg.kofi ? `<li class="kofi-foot"><a href="https://ko-fi.com/${esc(cfg.kofi)}" rel="noopener" target="_blank">${esc(words[l]['support.coffee'])}</a></li>` : ''}</ul>${cfg.email ? `<p class="contact-foot">${esc(c.contactLabel)} <a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a></p>` : ''}<p>${esc(c.footer)}</p></footer>`;
+<footer class="sitefoot"><ul class="links">${legal}${cfg.source ? `<li><a href="${esc(cfg.source)}" rel="noopener">${esc(c.sourceLabel)}</a></li>` : ''}${cfg.maker?.url ? `<li><a href="${esc(cfg.maker.url)}" rel="noopener" target="_blank">${esc(c.madeBy)} ${esc(cfg.maker.name)} ↗</a></li>` : ''}${cfg.kofi ? `<li class="kofi-foot"><a href="https://ko-fi.com/${esc(cfg.kofi)}" rel="noopener" target="_blank">${esc(words[l]['support.coffee'])}</a></li>` : ''}</ul>${cfg.osaBadge ? `<p class="osa-badge"><a href="https://www.opensourcealternatives.to"><img src="https://www.opensourcealternatives.to/badge-osa.svg" alt="As seen on Open Source Alternatives"></a></p>` : ''}${cfg.email ? `<p class="contact-foot">${esc(c.contactLabel)} <a href="mailto:${esc(cfg.email)}">${esc(cfg.email)}</a></p>` : ''}<p>${esc(c.footer)}</p></footer>`;
 }
 
 function toolPage(l, kind) {
@@ -235,6 +235,8 @@ h1{font-size:clamp(28px,5vw,38px);line-height:1.15;margin:0;letter-spacing:-.015
 .mail svg{flex:none}
 .contact-foot{font-size:16px;color:var(--ink);margin:0}
 .kofi-foot a::before{content:"\\2615  "}
+.osa-badge{margin:0;line-height:0}
+.osa-badge img{height:26px;width:auto;display:inline-block}
 .contact-foot a{color:var(--accent);font-weight:700;text-underline-offset:3px}
 a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>

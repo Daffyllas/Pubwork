@@ -477,6 +477,7 @@ export default {
       ['h', 'Ce que reçoit le site'],
       ['p', 'Comme tout site web, le serveur qui fournit les pages de Pubwork reçoit à chaque requête des informations techniques de base, comme votre adresse IP, le type de navigateur et la page demandée. Notre hébergeur les conserve peu de temps dans des journaux pour faire fonctionner le service en sécurité. Nous ne les utilisons pas pour vous identifier.'],
       ['p', 'Nous comptons les visites et quelques actions dans l’éditeur (par exemple « un fichier a été ouvert » ou « un PDF a été enregistré ») pour savoir ce qui est utile. Nous utilisons pour cela Cloudflare Web Analytics et Umami, tous deux sans cookies. Seul le nom de l’action est envoyé : jamais votre fichier, son nom ni son contenu. Ces comptages ne vous identifient pas.'],
+      ['p', "Le petit badge « As seen on Open Source Alternatives » en bas des pages est une image chargée depuis opensourcealternatives.to : ce site reçoit donc les mêmes informations techniques de base que n’importe quel site que vous visitez."],
       ['h', 'Enfants'],
       ['p', 'Pubwork ne collecte aucune donnée personnelle, ni d’enfants ni de quiconque.'],
       ['h', 'Contact'],

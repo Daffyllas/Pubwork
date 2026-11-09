@@ -1,5 +1,7 @@
 # Pubwork
 
+[![As seen on Open Source Alternatives](https://www.opensourcealternatives.to/badge-osa.svg)](https://www.opensourcealternatives.to)
+
 **Open, edit, print and convert Microsoft Publisher (.pub) files in your web browser — free, with no upload.**
 
 Live: **https://pubwork.app**
