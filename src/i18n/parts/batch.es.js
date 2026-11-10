@@ -1,0 +1,22 @@
+// the list of files on the "convert" pages (src/batch/list.js)
+export default {
+  'batch.files': 'Sus archivos ({n})',
+  'batch.add': 'Añadir archivos',
+  'batch.clear': 'Quitar todos',
+  'batch.remove': 'Quitar {name}',
+  'batch.skip': 'No es un archivo de Publisher: se dejará fuera',
+  'batch.formatTitle': 'Convertir todos a',
+  'batch.picturesHint': 'Cada página se convierte en una imagen. Un archivo con varias páginas tiene su propia carpeta dentro del .zip.',
+  'batch.go': 'Convertir {n} archivos a {format}',
+  'batch.goOne': 'Convertir 1 archivo a {format}',
+  'batch.waiting': 'En espera',
+  'batch.working': 'Convirtiendo…',
+  'batch.running': 'Convirtiendo el archivo {i} de {n} a {format}',
+  'batch.stop': 'Detener',
+  'batch.summary': '{ok} de {n} archivos convertidos a {format}',
+  'batch.download': 'Descargar',
+  'batch.downloadAll': 'Descargar todos (.zip, {size})',
+  'batch.bigTitle': 'Son muchos a la vez',
+  'batch.big': 'Estos archivos podrían ocupar unos {size}. Todo se guarda en esta pestaña hasta que lo descargue, así que el navegador podría quedarse sin memoria y detenerse. Es más seguro convertir una carpeta cada vez.',
+  'batch.bigGo': 'Convertir de todos modos',
+};
