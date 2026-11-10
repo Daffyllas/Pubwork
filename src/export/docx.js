@@ -179,9 +179,11 @@ function tableXml(t, ctx) {
 }
 
 function pictureRun(it, ctx) {
-  const name = `image${++ctx.images}.${it.ext === 'jpeg' ? 'jpeg' : it.ext}`;
-  const rid = `rIdImg${ctx.images}`;
-  ctx.media.push({ name, bytes: it.bytes, rid });
+  // the same picture used again (a logo on every page, a background from the master page) shares one file
+  const ext = it.ext === 'jpeg' ? 'jpeg' : it.ext;
+  let m = ctx.media.find((x) => x.ext === ext && x.bytes.length === it.bytes.length && x.bytes.every((b, i) => b === it.bytes[i]));
+  if (!m) { ctx.images++; m = { name: `image${ctx.images}.${ext}`, ext, bytes: it.bytes, rid: `rIdImg${ctx.images}` }; ctx.media.push(m); }
+  const rid = m.rid;
   const id = ctx.ids + 1;
   const pic = `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="${x(name)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr>${xfrm(it)}<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>${it.stroke ? lineXml(it.stroke) : ''}</pic:spPr></pic:pic></a:graphicData></a:graphic>`;
   return `<w:r><w:drawing>${anchor(it, ctx, pic, true)}</w:drawing></w:r>`;
