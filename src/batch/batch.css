@@ -1,0 +1,40 @@
+/* the list of files on the "convert" pages (batch/list.js) */
+.blist{display:flex;flex-direction:column;gap:14px;margin-top:4px}
+.blist[hidden]{display:none}
+.blist h2{font-size:17px;margin:4px 0 0}
+.blist-head{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
+.blist-head h2{margin:0}
+.blist-tools{display:flex;flex-wrap:wrap;gap:8px}
+.blist-tools .btn:disabled,.blist .chips button:disabled{opacity:.55;cursor:default}
+.blist-rows{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;max-height:min(420px,55vh);overflow:auto;background:var(--panel)}
+.blist-rows li{display:flex;align-items:center;gap:10px;padding:4px 4px 4px 12px;border-bottom:1px solid var(--line);min-height:52px}
+.blist-rows li:last-child{border-bottom:0}
+.blist-mark{flex:none;width:20px;height:20px;color:var(--accent);display:grid;place-items:center}
+.blist-mark svg{width:20px;height:20px}
+.blist-rows li.skip .blist-mark,.blist-rows li.skip b{color:var(--muted)}
+.blist-rows li.done .blist-mark{color:var(--ok)}
+.blist-rows li.failed .blist-mark,.blist-rows li.failed small{color:var(--bad)}
+.blist-name{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.blist-name b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blist-name small{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blist-size{flex:none;color:var(--muted);font-size:13px;padding-right:6px}
+.blist-x,.blist-one{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;border:0;background:none;border-radius:8px;cursor:pointer;font:inherit;color:var(--muted)}
+.blist-x:hover{background:var(--accent-soft);color:var(--accent)}
+.blist-one{color:var(--accent);font-weight:600;font-size:14px;padding:0 10px}
+.blist-one:hover{background:var(--accent-soft)}
+.blist-x svg,.blist-one svg{width:18px;height:18px}
+.blist-spin{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--accent);animation:blist-spin .9s linear infinite}
+@keyframes blist-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.blist-spin{animation:none}}
+.blist-go{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.blist-go .btn svg{width:18px;height:18px}
+.blist-progress{flex:1 1 320px;display:flex;flex-direction:column;gap:6px}
+.blist-progress p,.blist-summary{margin:0;font-weight:600}
+.blist-summary{flex-basis:100%}
+.blist-progress progress{width:100%;height:10px;accent-color:var(--accent)}
+.blist-big{margin:0 0 12px;font-size:15px;max-width:44ch}
+.blist .hint{margin:0;font-size:13.5px;color:var(--muted)}
+.blist{--ok:#2e6b3a;--bad:#a3241b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .blist{--ok:#7cc48a;--bad:#f08a80}}
+:root[data-theme="dark"] .blist{--ok:#7cc48a;--bad:#f08a80}
+.blist-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;margin:0}

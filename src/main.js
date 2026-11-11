@@ -23,6 +23,7 @@ import { clone, uid, reId, blankDocument, PAGE_SIZES, transformItem, scaleStyle,
 import { toPubwork, fromPubwork, isZip, keepLocally, listLocal, loadLocal, forgetLocal, trimLocal } from './editor/file.js';
 import { track } from './track.js';
 import { askBeforeDownload, setupFloating } from './tip.js';
+import { BatchList } from './batch/list.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -46,7 +47,7 @@ class App {
     const fromHash = /^#to-(pdf|jpg|png|docx|batch)$/.exec(location.hash)?.[1];
     this.convert = document.documentElement.dataset.convert || fromHash || null;
     if (fromHash && fromHash !== 'batch' && $('convertNote')) { $('convertNote').textContent = t('convert.ready', { format: FORMAT_NAME[this.convert] }); $('convertNote').hidden = false; }
-    // converters take many files at once, or a whole folder, and give one .zip back
+    // converters take many files at once, or a whole folder, into a list to convert together (batch/list.js)
     this.batchFormat = this.convert === 'batch' ? 'pdf' : this.convert;
     if (this.convert) { $('file').multiple = true; $('batchBox').hidden = false; }
     if (this.convert === 'batch') {
@@ -217,61 +218,23 @@ class App {
   // ---------------------------------------------------------------- opening
   openMany(files) {
     if (!files.length) return;
-    const pubs = files.filter((f) => /\.pub$/i.test(f.name));
-    if (this.convert && (files.length > 1 || this.convert === 'batch')) this.convertMany(pubs.length ? pubs : files);
-    else this.openFile(files[0]);
+    // on a converter page several files (or any on the "many files" page) go into the list to convert together
+    if (this.convert && (files.length > 1 || this.convert === 'batch' || this.batch?.items.length)) {
+      this.goHome();
+      (this.batch ||= new BatchList(this, { formatName: FORMAT_NAME })).add(files);
+    } else this.openFile(files[0]);
   }
   renderBatchFormats() {
     const box = $('batchFormats'); box.hidden = false;
     box.innerHTML = ['pdf', 'docx', 'jpg', 'png', 'svg', 'sla', 'idml'].map((f) => `<button data-f="${f}" class="${f === this.batchFormat ? 'on' : ''}" aria-pressed="${f === this.batchFormat}">${esc(t('batch.to', { format: FORMAT_NAME[f] }))}</button>`).join('');
     box.querySelectorAll('[data-f]').forEach((b) => { b.onclick = () => { this.batchFormat = b.dataset.f; this.renderBatchFormats(); }; });
   }
-  // many .pub files -> one .zip with a PDF (or Word file, or pictures) for each, and a list of what happened
-  async convertMany(files) {
-    const format = this.batchFormat || 'pdf', { zipSync, unzipSync } = await import('fflate');
-    const entries = {}, lines = [], used = new Set();
-    let ok = 0, bad = 0;
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i], label = f.webkitRelativePath || f.name;
-      this.busy(true, t('batch.progress', { i: i + 1, n: files.length, name: f.name }));
-      try {
-        const doc = await this.readPub(f);
-        this.show(doc, { quiet: true });
-        await this.settled;
-        const out = await this.exportOut(format, { size: 'print', pages: null });
-        let name = (f.webkitRelativePath ? f.webkitRelativePath.replace(/\.pub$/i, '') + out.name.slice(out.name.lastIndexOf('.')) : out.name).replace(/^\/+/, '');
-        for (let k = 2; used.has(name.toLowerCase()); k++) name = name.replace(/( \(\d+\))?(\.[^.]+)$/, ` (${k})$2`);
-        used.add(name.toLowerCase());
-        const bytes = new Uint8Array(await out.blob.arrayBuffer());
-        if (/\.zip$/i.test(name) && format !== 'pubwork') { // pictures of several pages: a folder inside the one .zip, not a .zip in a .zip
-          const dir = name.replace(/\.zip$/i, '');
-          for (const [inner, data] of Object.entries(unzipSync(bytes))) entries[`${dir}/${inner}`] = [data, { level: 0 }];
-          name = `${dir}/`;
-        } else entries[name] = [bytes, { level: 0 }];
-        const diff = out.report?.picturePages ? ` · ${t('batch.pictures', { n: out.report.picturePages })}` : '';
-        lines.push(`OK  ${label} -> ${name}${diff}`); ok++;
-      } catch (err) {
-        console.error(err);
-        lines.push(`--  ${label}: ${t(`err.${err.code}`) !== `err.${err.code}` ? t(`err.${err.code}`) : t('batch.failed')}`); bad++;
-      }
-    }
-    this.busy(true, t('busy.finishing'));
-    const report = [t('batch.reportTitle', { n: files.length }), '', ...lines, '', t('batch.reportEnd', { ok, bad })].join('\r\n');
-    entries[`${t('batch.reportName')}.txt`] = [new TextEncoder().encode('\ufeff' + report), { level: 6 }];
-    const blob = new Blob([zipSync(entries)], { type: 'application/zip' });
-    this.goHome();
-    this.busy(false);
-    track('batch-convert', { format, files: files.length, ok, bad });
-    const how = await download(blob, `Pubwork ${FORMAT_NAME[format]} (${ok}).zip`);
-    if (how === 'blocked') this.toast(t('save.blocked'), 9000);
-    else this.toast(t(bad ? 'batch.doneSome' : ok === 1 ? 'batch.doneOne' : 'batch.done', { ok, bad }), 12000);
-  }
   // read a .pub file into a document (throws with err.code)
-  async readPub(file) {
+  async readPub(file, { quiet = false } = {}) {
     const name = file.name || 'document.pub', buf = await file.arrayBuffer();
     const head = new Uint8Array(buf, 0, Math.min(8, buf.byteLength));
     if (!(head[0] === 0xd0 && head[1] === 0xcf && head[2] === 0x11 && head[3] === 0xe0)) throw Object.assign(new Error('notPubFile'), { code: /\.pub$/i.test(name) ? 'notPubFile' : 'choosePub' });
-    const doc = await this.readInWorker(buf, name);
+    const doc = await this.readInWorker(buf, name, quiet ? () => {} : undefined); // quiet: no "reading…" over the screen
     if (doc.hasWordArt) { delete doc.hasWordArt; await (await import('./wordart/import.js')).drawImportedWordArt(doc); }
     for (const pg of [...doc.pages, ...doc.masters]) { pg.id = uid('p'); const rec = (list) => list.forEach((it) => { const chain = it.chain, ci = it.chainIndex, cl = it.chainLength, story = it.story; it.id = uid(); if (chain) Object.assign(it, { chain, chainIndex: ci, chainLength: cl, story }); if (it.items) rec(it.items); }); rec(pg.items); }
     doc.uid = uid('d');
@@ -321,12 +284,12 @@ class App {
     if (this.convert) { await this.settled; this.busy(false); this.save({ format: this.convert, size: 'print', pages: null }); }
     else this.busy(false);
   }
-  readInWorker(buf, name) {
+  readInWorker(buf, name, onStatus = (key) => this.busy(true, t(key))) {
     return new Promise((resolve, reject) => {
       const w = new Worker(new URL('./readworker.js', import.meta.url), { type: 'module' });
       w.onmessage = (ev) => {
         const m = ev.data;
-        if (m.status) { this.busy(true, t(m.status)); return; }
+        if (m.status) { onStatus(m.status); return; }
         w.terminate();
         if (m.error) reject(Object.assign(new Error(m.error), { code: m.error, detail: m.detail })); else resolve(m.doc);
       };
@@ -1027,23 +990,23 @@ async function filesFromDrop(dt) {
   for (const e of entries) await walk(e, '');
   return out;
 }
-// a PDF, Word, ODG or pictures of the open document -> { blob, name, report? }
-App.prototype.exportOut = async function exportOut(format, { size = 'print', pages = null, onProgress, outline = false } = {}) {
-  if (format === 'pdf') { const { exportPdf } = await import('./export/pdf.js'); return exportPdf(this.doc, this.pageEls, { pages, embeddedFonts: embeddedFontBytes, onProgress }); }
-  if (format === 'docx') { const { exportDocx } = await import('./export/docx.js'); return exportDocx(this.doc, this.pageEls); }
-  if (format === 'odg') { const { exportOdg } = await import('./export/odg.js'); return exportOdg(this.doc, this.pageEls); }
-  if (format === 'pptx') { const { exportPptx } = await import('./export/pptx.js'); return exportPptx(this.doc, this.pageEls); }
-  if (format === 'html') { const { exportHtml } = await import('./export/html.js'); return exportHtml(this.doc, this.pageEls); }
-  if (format === 'eml') { const { exportEml } = await import('./export/eml.js'); return exportEml(this.doc, this.pageEls); }
-  if (format === 'xps') { const { exportXps } = await import('./export/xps.js'); return exportXps(this.doc, this.pageEls); }
+// a PDF, Word, ODG or pictures of the open document (or of src: { doc, pageEls, embedded }) -> { blob, name, report? }
+App.prototype.exportOut = async function exportOut(format, { size = 'print', pages = null, onProgress, outline = false } = {}, src = this) {
+  if (format === 'pdf') { const { exportPdf } = await import('./export/pdf.js'); return exportPdf(src.doc, src.pageEls, { pages, embeddedFonts: embeddedFontBytes, onProgress }); }
+  if (format === 'docx') { const { exportDocx } = await import('./export/docx.js'); return exportDocx(src.doc, src.pageEls); }
+  if (format === 'odg') { const { exportOdg } = await import('./export/odg.js'); return exportOdg(src.doc, src.pageEls); }
+  if (format === 'pptx') { const { exportPptx } = await import('./export/pptx.js'); return exportPptx(src.doc, src.pageEls); }
+  if (format === 'html') { const { exportHtml } = await import('./export/html.js'); return exportHtml(src.doc, src.pageEls); }
+  if (format === 'eml') { const { exportEml } = await import('./export/eml.js'); return exportEml(src.doc, src.pageEls); }
+  if (format === 'xps') { const { exportXps } = await import('./export/xps.js'); return exportXps(src.doc, src.pageEls); }
   if (['svg', 'sla', 'idml'].includes(format)) {
     // the fonts the page was really drawn with, handed over with the file (export/docfonts.js)
-    const fonts = await (await import('./export/docfonts.js')).fontPlan(this.doc, this.embedded || new Map()).catch(() => null);
-    if (format === 'svg') { const { exportSvg } = await import('./export/svg.js'); return exportSvg(this.doc, this.pageEls, { pages, onProgress, fonts, outline: !!outline }); }
-    if (format === 'sla') { const { exportSla } = await import('./export/sla.js'); return exportSla(this.doc, this.pageEls, { fonts }); }
-    const { exportIdml } = await import('./export/idml.js'); return exportIdml(this.doc, this.pageEls, { fonts });
+    const fonts = await (await import('./export/docfonts.js')).fontPlan(src.doc, src.embedded || new Map()).catch(() => null);
+    if (format === 'svg') { const { exportSvg } = await import('./export/svg.js'); return exportSvg(src.doc, src.pageEls, { pages, onProgress, fonts, outline: !!outline }); }
+    if (format === 'sla') { const { exportSla } = await import('./export/sla.js'); return exportSla(src.doc, src.pageEls, { fonts }); }
+    const { exportIdml } = await import('./export/idml.js'); return exportIdml(src.doc, src.pageEls, { fonts });
   }
   const { exportImages } = await import('./export/images.js');
-  return exportImages(this.doc, this.pageEls, { format, size, pages, onProgress });
+  return exportImages(src.doc, src.pageEls, { format, size, pages, onProgress });
 };
 window.app = new App();

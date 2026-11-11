@@ -1,0 +1,22 @@
+// the list of files on the "convert" pages (src/batch/list.js)
+export default {
+  'batch.files': 'Ihre Dateien ({n})',
+  'batch.add': 'Dateien hinzufügen',
+  'batch.clear': 'Alle entfernen',
+  'batch.remove': '{name} entfernen',
+  'batch.skip': 'Keine Publisher-Datei: wird ausgelassen',
+  'batch.formatTitle': 'Alle umwandeln in',
+  'batch.picturesHint': 'Jede Seite wird ein eigenes Bild. Eine Datei mit mehreren Seiten bekommt in der .zip-Datei einen eigenen Ordner.',
+  'batch.go': '{n} Dateien in {format} umwandeln',
+  'batch.goOne': '1 Datei in {format} umwandeln',
+  'batch.waiting': 'Wartet',
+  'batch.working': 'Wird umgewandelt…',
+  'batch.running': 'Datei {i} von {n} wird in {format} umgewandelt',
+  'batch.stop': 'Anhalten',
+  'batch.summary': '{ok} von {n} Dateien in {format} umgewandelt',
+  'batch.download': 'Herunterladen',
+  'batch.downloadAll': 'Alle herunterladen (.zip, {size})',
+  'batch.bigTitle': 'Das ist viel auf einmal',
+  'batch.big': 'Diese Dateien könnten etwa {size} groß werden. Bis zum Herunterladen bleibt alles in diesem Tab, daher kann dem Browser der Speicher ausgehen. Sicherer ist es, einen Ordner nach dem anderen umzuwandeln.',
+  'batch.bigGo': 'Trotzdem umwandeln',
+};
